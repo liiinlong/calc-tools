@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水闸闸顶高程计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: #f0f4f8;
+            color: #1a202c;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        header {
+            background: linear-gradient(135deg, #1a56db, #0d3880);
+            color: #fff;
+            padding: 28px 32px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        header small {
+            font-size: 13px;
+            opacity: 0.8;
+            display: block;
+            margin-top: 4px;
+        }
+        header .badge {
+            background: rgba(255,255,255,0.18);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #1a56db;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 24px;
+        }
+        .form-grid.col-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+        .form-group .unit {
+            font-size: 11px;
+            color: #a0aec0;
+            font-weight: 400;
+        }
+        .form-group input, .form-group select {
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            background: #fafbfc;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1a56db;
+            background: #fff;
+        }
+        .form-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .form-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .form-group .hint {
+            font-size: 11px;
+            color: #718096;
+        }
+        .btn {
+            padding: 10px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: #1a56db;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #1443b0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(26,86,219,0.3);
+        }
+        .btn-secondary {
+            background: #edf2f7;
+            color: #2d3748;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            background: #e53e3e;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #c53030;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        /* Result section */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .result-item {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 16px 18px;
+            border-left: 4px solid #1a56db;
+        }
+        .result-item .label {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+        .result-item .value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+        .result-item .value .highlight {
+            color: #e53e3e;
+        }
+        .result-item .value .unit-suffix {
+            font-size: 14px;
+            font-weight: 400;
+            color: #718096;
+            margin-left: 2px;
+        }
+        .result-item.success {
+            border-left-color: #38a169;
+        }
+        .result-item.warning {
+            border-left-color: #d69e2e;
+        }
+        .result-item.danger {
+            border-left-color: #e53e3e;
+        }
+        .result-final {
+            background: linear-gradient(135deg, #ebf8ff, #e6f0ff);
+            border: 2px solid #1a56db;
+            border-left-width: 6px;
+        }
+        .result-final .value {
+            font-size: 28px;
+            color: #1a56db;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        table th {
+            background: #edf2f7;
+            padding: 8px 12px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+        }
+        table td {
+            padding: 7px 12px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        table tr:nth-child(even) {
+            background: #f7fafc;
+        }
+
+        .check-list {
+            list-style: none;
+        }
+        .check-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .check-list li:last-child {
+            border-bottom: none;
+        }
+        .check-pass {
+            color: #38a169;
+            font-weight: 600;
+        }
+        .check-fail {
+            color: #e53e3e;
+            font-weight: 600;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 16px;
+            background: #edf2f7;
+            border-radius: 8px;
+            padding: 3px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #4a5568;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .tab-btn.active {
+            background: #fff;
+            color: #1a56db;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .collapse-content {
+            display: none;
+        }
+        .collapse-content.show {
+            display: block;
+        }
+
+        .formula-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 14px;
+            margin: 10px 0;
+            line-height: 1.8;
+        }
+        .formula-box .formula {
+            font-style: italic;
+            font-weight: 600;
+            color: #1a56db;
+        }
+
+        .ref-note {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #fffff0;
+            border-radius: 6px;
+            border-left: 3px solid #d69e2e;
+        }
+
+        @media (max-width: 740px) {
+            .form-grid, .form-grid.col-3, .result-grid {
+                grid-template-columns: 1fr;
+            }
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 8px;
+            }
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header>
+        <div>
+            <h1>🚧 水闸闸顶高程计算器</h1>
+            <small>依据《SL 265-2016 水闸设计规范》<br>作者：龙龙</small>
+        </div>
+        <span class="badge">⚙ 版本 1.2</span>
+    </header>
+
+    <!-- Step 1: 基本参数 -->
+    <div class="card">
+        <div class="card-title"><span class="step-num">1</span>基本参数与工程等级</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>工程等别 <span class="unit">（鉴定时老闸用流量，新闸用所属建筑）</span></label>
+                <select id="projectClass">
+                    <option value="I">Ⅰ等 — 大（1）型</option>
+                    <option value="II">Ⅱ等 — 大（2）型</option>
+                    <option value="III" selected>Ⅲ等 — 中型</option>
+                    <option value="IV">Ⅳ等 — 小（1）型</option>
+                    <option value="V">Ⅴ等 — 小（2）型</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>建筑物级别 <span class="unit">（永久性主要建筑物）</span></label>
+                <select id="structureLevel">
+                    <option value="1">1 级</option>
+                    <option value="2">2 级</option>
+                    <option value="3" selected>3 级</option>
+                    <option value="4">4 级</option>
+                    <option value="5">5 级</option>
+                </select>
+                <span class="hint" id="levelHint">Ⅲ等工程，主要建筑物为3级</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: 水位参数 -->
+    <div class="card">
+        <div class="card-title"><span class="step-num">2</span>水位参数 <span class="unit">（单位：m）</span></div>
+        <div class="form-grid col-3">
+            <div class="form-group">
+                <label>正常蓄水位 ∇<sub>正</sub></label>
+                <input type="number" id="normalWL" step="0.01" value="45.50">
+            </div>
+            <div class="form-group">
+                <label>最高挡水位 ∇<sub>挡</sub></label>
+                <input type="number" id="retainWL" step="0.01" value="46.80">
+            </div>
+            <div class="form-group">
+                <label>设计洪水位 ∇<sub>设</sub></label>
+                <input type="number" id="designFL" step="0.01" value="47.50">
+            </div>
+            <div class="form-group">
+                <label>校核洪水位 ∇<sub>校</sub></label>
+                <input type="number" id="checkFL" step="0.01" value="48.20">
+            </div>
+            <div class="form-group">
+                <label>防洪（挡潮）堤顶高程 ∇<sub>堤顶</sub></label>
+                <input type="number" id="leveeElev" step="0.01" placeholder="选填">
+                <span class="hint">若水闸位于防洪堤上，需满足此要求</span>
+            </div>
+            <div class="form-group">
+                <label>交通桥厚度 <span class="unit">（梁板结构总厚）</span></label>
+                <input type="number" id="bridgeThick" step="0.01" value="0.80" placeholder="输入厚度">
+                <span class="hint">用于推算桥底高程：∇<sub>桥底</sub> = ∇<sub>闸顶</sub> − 桥厚</span>
+            </div>
+            <div class="form-group">
+                <label>闸前平均水深 H<sub>m</sub></label>
+                <input type="number" id="avgDepth" step="0.1" value="4.5">
+                <span class="hint">用于波浪计算</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: 波浪参数 -->
+    <div class="card">
+        <div class="card-title"><span class="step-num">3</span>波浪计算参数</div>
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="tab-auto">🔢 自动计算波浪</button>
+            <button class="tab-btn" data-tab="tab-manual">✏️ 手动输入波浪高度</button>
+        </div>
+
+        <!-- Auto tab -->
+        <div id="tab-auto" class="collapse-content show">
+            <div class="form-grid col-3">
+                <div class="form-group">
+                    <label>计算风速 W <span class="unit">（m/s）</span></label>
+                    <input type="number" id="windSpeed" step="0.1" value="18.0">
+                    <span class="hint">基本组合取重现期50年年最大风速</span>
+                </div>
+                <div class="form-group">
+                    <label>风区长度 D <span class="unit">（m）</span></label>
+                    <input type="number" id="fetchLen" step="1" value="500">
+                    <span class="hint">取对岸至水闸前沿直线距离</span>
+                </div>
+                <div class="form-group">
+                    <label>闸前水深 H <span class="unit">（m）</span></label>
+                    <input type="number" id="waterDepth" step="0.1" value="4.5">
+                    <span class="hint">计算水位与设计状况静水位一致</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual tab -->
+        <div id="tab-manual" class="collapse-content">
+            <div class="form-grid col-3">
+                <div class="form-group">
+                    <label>波浪计算高度 R <span class="unit">（m）</span></label>
+                    <input type="number" id="manualWaveH" step="0.01" value="0.80">
+                    <span class="hint">= h<sub>p%</sub> + h<sub>z</sub>（波高 + 波浪中心线至水位的高差）</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: 计算并显示结果 -->
+    <div class="card">
+        <div class="card-title"><span class="step-num">4</span>计算结果</div>
+
+        <div class="actions" style="margin-bottom: 16px;">
+            <button class="btn btn-primary" onclick="calculate()">🧮 计算闸顶高程</button>
+            <button class="btn btn-secondary" onclick="clearAll()">↺ 重置</button>
+            <button class="btn btn-secondary" onclick="exportToTxt()" title="将所有输入数据保存为TXT文件">📥 导出输入TXT</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('txtFileInput').click()" title="从TXT文件载入输入数据">📤 导入输入TXT</button>
+            <input type="file" id="txtFileInput" accept=".txt" style="display:none;" onchange="importFromTxt(event)">
+            <button class="btn btn-secondary" onclick="exportToWord()" title="将计算过程保存为Word文档">📄 导出计算书Word</button>
+        </div>
+
+        <div id="resultArea" style="display:none;">
+            <!-- 中间结果 -->
+            <div class="card-title" style="font-size:15px;border-bottom-color:#e2e8f0;margin-bottom:14px;">
+                📋 详细计算过程
+            </div>
+            <div class="result-grid" id="intermediateResults"></div>
+
+            <!-- 最终结果 -->
+            <div style="margin-top:20px;">
+                <div class="card-title" style="font-size:15px;border-bottom-color:#1a56db;margin-bottom:14px;color:#1a56db;">
+                    ✅ 最终推荐闸顶高程
+                </div>
+                <div id="finalResult"></div>
+            </div>
+
+            <!-- 复核 -->
+            <div style="margin-top:20px;">
+                <div class="card-title" style="font-size:15px;border-bottom-color:#d69e2e;margin-bottom:14px;">
+                    🔍 复核检查
+                </div>
+                <div id="checkResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 参考表格 -->
+    <div class="card">
+        <div class="card-title">📚 参考数据表</div>
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="tab-tbl-safety">安全加高表</button>
+            <button class="tab-btn" data-tab="tab-tbl-wave">波浪频率表</button>
+            <button class="tab-btn" data-tab="tab-tbl-ratio">波高比值表</button>
+            <button class="tab-btn" data-tab="tab-tbl-class">工程分等表</button>
+        </div>
+
+        <!-- 安全加高表 -->
+        <div id="tab-tbl-safety" class="collapse-content show">
+            <div class="table-wrap">
+                <table>
+                    <tr><th rowspan="2">运用工况</th><th colspan="4">水闸级别</th></tr>
+                    <tr><th>1 级</th><th>2 级</th><th>3 级</th><th>4、5 级</th></tr>
+                    <tr><td style="text-align:left;font-weight:500;">挡水时 — 正常蓄水位</td><td>0.7</td><td>0.5</td><td>0.4</td><td>0.3</td></tr>
+                    <tr><td style="text-align:left;font-weight:500;">挡水时 — 最高挡水位</td><td>0.5</td><td>0.4</td><td>0.3</td><td>0.2</td></tr>
+                    <tr><td style="text-align:left;font-weight:500;">泄水时 — 设计洪水位</td><td>1.5</td><td>1.0</td><td>0.7</td><td>0.5</td></tr>
+                    <tr><td style="text-align:left;font-weight:500;">泄水时 — 校核洪水位</td><td>1.0</td><td>0.7</td><td>0.5</td><td>0.4</td></tr>
+                </table>
+            </div>
+            <div class="ref-note">单位：m。安全加高为下限值，实际可取大值。</div>
+        </div>
+
+        <!-- 波浪频率 -->
+        <div id="tab-tbl-wave" class="collapse-content">
+            <div class="table-wrap">
+                <table>
+                    <tr><th>水闸级别</th><th>1 级</th><th>2 级</th><th>3 级</th><th>4 级</th><th>5 级</th></tr>
+                    <tr><td>波列累积频率 P (%)</td><td>1</td><td>2</td><td>5</td><td>10</td><td>20</td></tr>
+                </table>
+            </div>
+            <div class="ref-note">波列累积频率用于确定设计波高 h<sub>p%</sub>。</div>
+        </div>
+
+        <!-- 波高比值 -->
+        <div id="tab-tbl-ratio" class="collapse-content">
+            <div class="table-wrap">
+                <table>
+                    <tr><th>h<sub>m</sub> / H<sub>m</sub></th><th>P = 1%</th><th>P = 2%</th><th>P = 5%</th><th>P = 10%</th><th>P = 20%</th></tr>
+                    <tr><td>0.0</td><td>2.42</td><td>2.23</td><td>1.95</td><td>1.71</td><td>1.43</td></tr>
+                    <tr><td>0.1</td><td>2.26</td><td>2.09</td><td>1.87</td><td>1.65</td><td>1.41</td></tr>
+                    <tr><td>0.2</td><td>2.09</td><td>1.96</td><td>1.76</td><td>1.59</td><td>1.37</td></tr>
+                    <tr><td>0.3</td><td>1.93</td><td>1.82</td><td>1.66</td><td>1.52</td><td>1.34</td></tr>
+                    <tr><td>0.4</td><td>1.78</td><td>1.68</td><td>1.56</td><td>1.44</td><td>1.30</td></tr>
+                    <tr><td>0.5</td><td>1.63</td><td>1.56</td><td>1.46</td><td>1.37</td><td>1.25</td></tr>
+                </table>
+            </div>
+            <div class="ref-note">h<sub>p%</sub> / h<sub>m</sub> 比值表，用于由平均波高推算设计波高。</div>
+        </div>
+
+        <!-- 工程分等 -->
+        <div id="tab-tbl-class" class="collapse-content">
+            <div class="table-wrap">
+                <table>
+                    <tr><th>工程等别</th><th>Ⅰ</th><th>Ⅱ</th><th>Ⅲ</th><th>Ⅳ</th><th>Ⅴ</th></tr>
+                    <tr><td>工程规模</td><td>大（1）型</td><td>大（2）型</td><td>中型</td><td>小（1）型</td><td>小（2）型</td></tr>
+                    <tr><td>过闸流量 (m³/s)</td><td>≥ 5000</td><td>5000～1000</td><td>1000～100</td><td>100～20</td><td>&lt; 20</td></tr>
+                    <tr><td>主要建筑物级别</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+                </table>
+            </div>
+            <div class="ref-note">依据 SL 265-2001 第 2.1.1、2.1.2 条。</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:16px 0 8px;font-size:12px;color:#a0aec0;">
+        本计算器仅供学习参考，实际工程设计请以规范原文及专业审核为准。
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  常数与数据
+    // ============================================================
+    const g = 9.81;  // 重力加速度 m/s²
+
+    // 工程等别 → 主要建筑物级别
+    const classToLevel = { I: 1, II: 2, III: 3, IV: 4, V: 5 };
+
+    // 安全加高表 [工况][级别索引(1-5)]
+    // A_挡_正常, A_挡_最高, A_泄_设计, A_泄_校核
+    const safetyAdd = {
+        1: { retain_normal: 0.7, retain_max: 0.5, discharge_design: 1.5, discharge_check: 1.0 },
+        2: { retain_normal: 0.5, retain_max: 0.4, discharge_design: 1.0, discharge_check: 0.7 },
+        3: { retain_normal: 0.4, retain_max: 0.3, discharge_design: 0.7, discharge_check: 0.5 },
+        4: { retain_normal: 0.3, retain_max: 0.2, discharge_design: 0.5, discharge_check: 0.4 },
+        5: { retain_normal: 0.3, retain_max: 0.2, discharge_design: 0.5, discharge_check: 0.4 },
+    };
+
+    // 波列累积频率 P% (按水闸级别)
+    const waveP = { 1: 1, 2: 2, 3: 5, 4: 10, 5: 20 };
+    // P% → column index: 1→0, 2→1, 5→2, 10→3, 20→4
+    const pColMap = { 1: 0, 2: 1, 5: 2, 10: 3, 20: 4 };
+
+    // h_p/h_m ratio table: rows = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+    const ratioRows = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+    const ratioTable = [
+        [2.42, 2.23, 1.95, 1.71, 1.43],
+        [2.26, 2.09, 1.87, 1.65, 1.41],
+        [2.09, 1.96, 1.76, 1.59, 1.37],
+        [1.93, 1.82, 1.66, 1.52, 1.34],
+        [1.78, 1.68, 1.56, 1.44, 1.30],
+        [1.63, 1.56, 1.46, 1.37, 1.25],
+    ];
+
+    // ============================================================
+    //  按需动态加载 SheetJS（避免首屏阻塞，仅在导出/导入时加载）
+    // ============================================================
+    let _xlsxReady = false, _xlsxLoading = null;
+    function ensureXLSX() {
+        if (_xlsxReady) return Promise.resolve();
+        if (_xlsxLoading) return _xlsxLoading;
+        _xlsxLoading = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+            s.onload = () => { _xlsxReady = true; resolve(); };
+            s.onerror = () => { _xlsxLoading = null; reject(new Error('SheetJS 加载失败，请检查网络连接')); };
+            document.head.appendChild(s);
+        });
+        return _xlsxLoading;
+    }
+
+    // ============================================================
+    //  UI : Tab 切换
+    // ============================================================
+    document.querySelectorAll('.tab-bar').forEach(bar => {
+        const btns = bar.querySelectorAll('.tab-btn');
+        btns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                // 同一 bar 内切换
+                const siblings = this.parentElement.querySelectorAll('.tab-btn');
+                siblings.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const target = this.dataset.tab;
+                // 找同卡片内的对应 content
+                const card = this.closest('.card');
+                card.querySelectorAll('.collapse-content').forEach(el => el.classList.remove('show'));
+                const targetEl = card.querySelector('#' + target);
+                if (targetEl) targetEl.classList.add('show');
+            });
+        });
+    });
+
+    // ============================================================
+    //  联动：工程等别 → 建筑物级别
+    // ============================================================
+    document.getElementById('projectClass').addEventListener('change', function () {
+        const level = classToLevel[this.value];
+        document.getElementById('structureLevel').value = level;
+        updateLevelHint();
+    });
+    document.getElementById('structureLevel').addEventListener('change', updateLevelHint);
+
+    function updateLevelHint() {
+        const cls = document.getElementById('projectClass').value;
+        const lv = document.getElementById('structureLevel').value;
+        const clsNames = { I: 'Ⅰ等', II: 'Ⅱ等', III: 'Ⅲ等', IV: 'Ⅳ等', V: 'Ⅴ等' };
+        document.getElementById('levelHint').textContent = `${clsNames[cls]}工程，主要建筑物为 ${lv} 级`;
+    }
+    updateLevelHint();
+
+    // ============================================================
+    //  核心计算
+    // ============================================================
+    function calculate() {
+        // --- 读取基础参数 ---
+        const level = parseInt(document.getElementById('structureLevel').value);
+        const normalWL = parseFloat(document.getElementById('normalWL').value);
+        const retainWL = parseFloat(document.getElementById('retainWL').value);
+        const designFL = parseFloat(document.getElementById('designFL').value);
+        const checkFL = parseFloat(document.getElementById('checkFL').value);
+        const leveeElev = parseFloat(document.getElementById('leveeElev').value) || null;
+        const bridgeThick = parseFloat(document.getElementById('bridgeThick').value) || 0;
+        const avgDepth = parseFloat(document.getElementById('avgDepth').value);
+
+        // --- 判断使用哪种波浪方式 ---
+        const isAutoWave = document.getElementById('tab-auto').classList.contains('show');
+        let waveHeight = 0;
+        let waveCalcDetail = '';
+        let hm = 0, Tm = 0, Lm = 0, hp = 0, hz = 0;
+
+        if (isAutoWave) {
+            // 读取波浪参数
+            const W = parseFloat(document.getElementById('windSpeed').value);
+            const D = parseFloat(document.getElementById('fetchLen').value);
+            const H = parseFloat(document.getElementById('waterDepth').value);
+
+            // 莆田试验站公式：计算平均波高 hm
+            const gHW2 = g * H / (W * W);
+            const gDW2 = g * D / (W * W);
+
+            // 防止数值溢出
+            const term1_inner = 0.7 * Math.pow(gHW2, 0.7);
+            const th_term1 = Math.tanh(term1_inner);
+
+            const numerator = 0.0018 * Math.pow(gDW2, 0.45);
+            const denominator = 0.13 * th_term1;
+            const term2_inner = numerator / denominator;
+
+            // 当 gDW2 很小时，term2_inner 可能很大，但 Math.tanh 会处理
+            const th_term2 = Math.tanh(term2_inner);
+
+            hm = (W * W / g) * 0.13 * th_term1 * th_term2;
+
+            // 平均波周期 Tm
+            Tm = (W / g) * 13.9 * Math.sqrt(g * hm / (W * W));
+
+            // 平均波长 Lm — 迭代求解 Lm = (g*Tm^2/2π) * tanh(2πH/Lm)
+            Lm = (g * Tm * Tm) / (2 * Math.PI); // 深水初始值
+            for (let iter = 0; iter < 30; iter++) {
+                const arg = 2 * Math.PI * H / Lm;
+                if (arg > 300) break; // 避免溢出
+                const newLm = (g * Tm * Tm) / (2 * Math.PI) * Math.tanh(arg);
+                if (Math.abs(newLm - Lm) < 1e-6) break;
+                Lm = newLm;
+            }
+
+            // 波列累积频率 P%
+            const pVal = waveP[level];
+            const pCol = pColMap[pVal];
+
+            // 查比值表 hm/Hm (这里 Hm 是风区内平均水深，用闸前平均水深近似)
+            const hmHm = Math.min(hm / Math.max(avgDepth, 0.01), 0.5);
+            let ratio = interpolateRatio(hmHm, pCol);
+            hp = hm * ratio;
+
+            // 波浪中心线至水位的高差 hz = (π*hp^2/Lm) * cth(2πH/Lm)
+            const argCth = 2 * Math.PI * H / Math.max(Lm, 0.01);
+            let cthVal;
+            if (argCth > 20) {
+                cthVal = 1; // cth 趋近 1
+            } else {
+                cthVal = 1 / Math.tanh(argCth);
+            }
+            hz = (Math.PI * hp * hp / Math.max(Lm, 0.01)) * cthVal;
+
+            waveHeight = hp + hz;
+
+            waveCalcDetail = `hm = ${hm.toFixed(4)} m, Tm = ${Tm.toFixed(3)} s, Lm = ${Lm.toFixed(3)} m`;
+            waveCalcDetail += `，P = ${pVal}%，hp/hm = ${ratio.toFixed(3)}，hp = ${hp.toFixed(4)} m`;
+            waveCalcDetail += `，hz = ${hz.toFixed(4)} m，R = hp + hz = ${waveHeight.toFixed(4)} m`;
+
+            // 如果手动方式显示但用户切到了自动，忽略手动值
+        } else {
+            waveHeight = parseFloat(document.getElementById('manualWaveH').value) || 0;
+            waveCalcDetail = `手动输入 R = ${waveHeight.toFixed(3)} m`;
+        }
+
+        // --- 安全加高 ---
+        const safe = safetyAdd[level];
+        const A_retain_normal = safe.retain_normal;
+        const A_retain_max = safe.retain_max;
+        const A_discharge_design = safe.discharge_design;
+        const A_discharge_check = safe.discharge_check;
+
+        // --- 计算各工况闸顶高程下限 ---
+        // 挡水时：∇_闸顶 ≥ ∇_正（或∇_挡）+ R + A
+        const elev_retain_normal = normalWL + waveHeight + A_retain_normal;
+        const elev_retain_max = retainWL + waveHeight + A_retain_max;
+
+        // 泄水时：∇_闸顶 ≥ ∇_设（或∇_校）+ A
+        const elev_discharge_design = designFL + A_discharge_design;
+        const elev_discharge_check = checkFL + A_discharge_check;
+
+        // 各工况候选值
+        const candidates = [
+            { name: '挡水-正常蓄水位', value: elev_retain_normal, desc: `∇_正(${normalWL.toFixed(2)}) + R(${waveHeight.toFixed(3)}) + A(${A_retain_normal})` },
+            { name: '挡水-最高挡水位', value: elev_retain_max, desc: `∇_挡(${retainWL.toFixed(2)}) + R(${waveHeight.toFixed(3)}) + A(${A_retain_max})` },
+            { name: '泄水-设计洪水位', value: elev_discharge_design, desc: `∇_设(${designFL.toFixed(2)}) + A(${A_discharge_design})` },
+            { name: '泄水-校核洪水位', value: elev_discharge_check, desc: `∇_校(${checkFL.toFixed(2)}) + A(${A_discharge_check})` },
+        ];
+        // 防洪堤要求
+        if (leveeElev !== null && !isNaN(leveeElev)) {
+            candidates.push({ name: '防洪(挡潮)堤顶高程', value: leveeElev, desc: `∇_堤顶 = ${leveeElev.toFixed(2)} m` });
+        }
+
+        // --- 初始计算结果（各工况取大值） ---
+        let maxElev = Math.max(...candidates.map(c => c.value));
+        let controlling = candidates.filter(c => Math.abs(c.value - maxElev) < 0.001);
+        let bridgeAdjusted = false;   // 是否因桥底高程不足而抬升
+        let adjustmentNote = '';
+
+        // --- 若桥底高程不满足要求，自动抬升闸顶高程 ---
+        // 桥底高程 = 闸顶高程 - 桥厚；要求：桥底高程 - 最高洪水位 ≥ 0.5
+        const maxFloodLevel = Math.max(normalWL, retainWL, designFL, checkFL);
+        const bridgeReqElev = maxFloodLevel + 0.5 + bridgeThick;  // 满足桥底要求所需的最小闸顶高程
+        if (maxElev < bridgeReqElev) {
+            bridgeAdjusted = true;
+            adjustmentNote = `桥底高程不满足要求（∇_桥底=闸顶−桥厚=${maxElev.toFixed(2)}−${bridgeThick.toFixed(2)}=${(maxElev-bridgeThick).toFixed(2)}，高出最高洪水位${((maxElev-bridgeThick)-maxFloodLevel).toFixed(2)}m < 0.5m），`;
+            maxElev = bridgeReqElev;
+            controlling = [{ name: `交通桥底高程控制（抬升后）`, value: maxElev, desc: `∇_闸顶需 ≥ 最高洪水位(${maxFloodLevel.toFixed(2)}) + 0.5 + 桥厚(${bridgeThick.toFixed(2)})` }];
+            adjustmentNote += `闸顶高程自动抬升至 ${maxElev.toFixed(2)} m`;
+        }
+
+        // --- 复核检查 ---
+        const checks = [];
+        // 1. 露顶式闸门顶部超高
+        const gateFreeboardCheck = maxElev - retainWL;
+        checks.push({
+            name: '露顶式闸门顶部超高',
+            condition: `闸顶高程(${maxElev.toFixed(2)}) - 最高挡水位(${retainWL.toFixed(2)}) = ${gateFreeboardCheck.toFixed(2)} m`,
+            pass: gateFreeboardCheck >= 0.3,
+            requirement: '≥ 0.3～0.5 m（取0.3m下限）',
+            actual: gateFreeboardCheck.toFixed(2) + ' m'
+        });
+
+        // 2. 桥梁底高程（由闸顶高程 - 桥厚推算）
+        const calcBridgeElev = maxElev - bridgeThick;
+        const bridgeCheck = calcBridgeElev - maxFloodLevel;
+        checks.push({
+            name: '工作桥/交通桥梁(板)底高程',
+            condition: `∇_桥底(${calcBridgeElev.toFixed(2)}) = ∇_闸顶(${maxElev.toFixed(2)}) − 桥厚(${bridgeThick.toFixed(2)})；高出最高洪水位 ${bridgeCheck.toFixed(2)} m`,
+            pass: bridgeCheck >= 0.5,
+            requirement: '∇_桥底 高出最高洪水位 ≥ 0.5 m',
+            actual: bridgeCheck.toFixed(2) + ' m'
+        });
+
+        // --- 渲染结果 ---
+        document.getElementById('resultArea').style.display = 'block';
+
+        // 中间结果
+        let interHTML = '';
+
+        if (isAutoWave) {
+            interHTML += `
+                <div class="result-item">
+                    <div class="label">🌊 平均波高 h<sub>m</sub></div>
+                    <div class="value">${hm.toFixed(4)}<span class="unit-suffix">m</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="label">⏱ 平均波周期 T<sub>m</sub></div>
+                    <div class="value">${Tm.toFixed(3)}<span class="unit-suffix">s</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="label">📏 平均波长 L<sub>m</sub></div>
+                    <div class="value">${Lm.toFixed(3)}<span class="unit-suffix">m</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="label">📊 设计波高 h<sub>p%</sub>（P=${waveP[level]}%）</div>
+                    <div class="value">${hp.toFixed(4)}<span class="unit-suffix">m</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="label">🌬 波浪中心线至水位的高差 h<sub>z</sub></div>
+                    <div class="value">${hz.toFixed(4)}<span class="unit-suffix">m</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="label">🌊 波浪计算高度 R = h<sub>p%</sub> + h<sub>z</sub></div>
+                    <div class="value">${waveHeight.toFixed(4)}<span class="unit-suffix">m</span></div>
+                </div>
+            `;
+        } else {
+            interHTML += `
+                <div class="result-item">
+                    <div class="label">🌊 波浪计算高度 R（手动输入）</div>
+                    <div class="value">${waveHeight.toFixed(3)}<span class="unit-suffix">m</span></div>
+                </div>
+            `;
+        }
+
+        // 安全加高
+        interHTML += `
+            <div class="result-item">
+                <div class="label">🛡 挡水-正常蓄水位 安全加高 A<sub>挡,正</sub></div>
+                <div class="value">${A_retain_normal.toFixed(1)}<span class="unit-suffix">m</span></div>
+            </div>
+            <div class="result-item">
+                <div class="label">🛡 挡水-最高挡水位 安全加高 A<sub>挡,最</sub></div>
+                <div class="value">${A_retain_max.toFixed(1)}<span class="unit-suffix">m</span></div>
+            </div>
+            <div class="result-item">
+                <div class="label">🛡 泄水-设计洪水位 安全加高 A<sub>泄,设</sub></div>
+                <div class="value">${A_discharge_design.toFixed(1)}<span class="unit-suffix">m</span></div>
+            </div>
+            <div class="result-item">
+                <div class="label">🛡 泄水-校核洪水位 安全加高 A<sub>泄,校</sub></div>
+                <div class="value">${A_discharge_check.toFixed(1)}<span class="unit-suffix">m</span></div>
+            </div>
+            <div class="result-item">
+                <div class="label">🏗 推算交通桥底高程 ∇<sub>桥底</sub> = ∇<sub>闸顶</sub> − 桥厚</div>
+                <div class="value">${(maxElev - bridgeThick).toFixed(2)}<span class="unit-suffix">m</span></div>
+                <div style="font-size:12px;color:#718096;margin-top:2px;">${maxElev.toFixed(2)} − ${bridgeThick.toFixed(2)} = ${(maxElev - bridgeThick).toFixed(2)} m</div>
+            </div>
+        `;
+
+        document.getElementById('intermediateResults').innerHTML = interHTML;
+
+        // 各工况闸顶高程
+        let candidateHTML = '<div class="result-grid">';
+        candidates.forEach(c => {
+            const isCtrl = controlling.some(cc => cc.name === c.name);
+            candidateHTML += `
+                <div class="result-item ${isCtrl ? 'result-final' : ''}">
+                    <div class="label">${c.name} ${isCtrl ? '⭐ 控制工况' : ''}</div>
+                    <div class="value">${c.value.toFixed(2)}<span class="unit-suffix">m</span></div>
+                    <div style="font-size:12px;color:#718096;margin-top:2px;">${c.desc}</div>
+                </div>
+            `;
+        });
+        candidateHTML += '</div>';
+
+        // 最终结果
+        const finalHTML = `
+            <div style="margin-bottom:16px;">
+                <div style="font-size:14px;color:#4a5568;margin-bottom:10px;">
+                    取各工况最大值${bridgeAdjusted ? '，并抬升以满足桥底高程要求' : '，并满足防洪堤要求'}：
+                    ${bridgeAdjusted ? `<span style="color:#d69e2e;font-weight:600;">${adjustmentNote}</span>` : ''}
+                </div>
+                <div class="result-final result-item" style="background:linear-gradient(135deg, #ebf8ff, #dbeafe);">
+                    <div class="label">🏆 推荐闸顶高程 ∇<sub>闸顶</sub></div>
+                    <div class="value">${maxElev.toFixed(2)}<span class="unit-suffix">m</span></div>
+                    <div style="font-size:13px;color:#4a5568;margin-top:4px;">
+                        控制工况：${controlling.map(c => c.name).join('、')}
+                    </div>
+                </div>
+            </div>
+            ${candidateHTML}
+        `;
+        document.getElementById('finalResult').innerHTML = finalHTML;
+
+        // 复核
+        let checkHTML = '<ul class="check-list">';
+        checks.forEach(c => {
+            checkHTML += `
+                <li>
+                    <span class="${c.pass ? 'check-pass' : 'check-fail'}">
+                        ${c.pass ? '✅' : '❌'}
+                    </span>
+                    <strong>${c.name}</strong>：
+                    <span>${c.condition}</span>
+                    <span style="color:#718096;">（要求：${c.requirement}）</span>
+                    <span class="${c.pass ? 'check-pass' : 'check-fail'}">
+                        ${c.pass ? '满足要求' : '不满足要求'}
+                    </span>
+                </li>
+            `;
+        });
+        checkHTML += '</ul>';
+        document.getElementById('checkResults').innerHTML = checkHTML;
+
+        // 滚动到结果
+        document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ============================================================
+    //  线性插值：查 h_p/h_m 比值表
+    // ============================================================
+    function interpolateRatio(hmHm, colIdx) {
+        if (hmHm <= 0) return ratioTable[0][colIdx];
+        if (hmHm >= 0.5) return ratioTable[ratioTable.length - 1][colIdx];
+
+        for (let i = 0; i < ratioRows.length - 1; i++) {
+            const x0 = ratioRows[i], x1 = ratioRows[i + 1];
+            if (hmHm >= x0 && hmHm <= x1) {
+                const t = (hmHm - x0) / (x1 - x0);
+                const y0 = ratioTable[i][colIdx];
+                const y1 = ratioTable[i + 1][colIdx];
+                return y0 + t * (y1 - y0);
+            }
+        }
+        return ratioTable[ratioTable.length - 1][colIdx];
+    }
+
+    // ============================================================
+    //  TXT 导出：保存所有输入数据
+    // ============================================================
+    function exportToTxt() {
+        const inputData = collectInputData();
+        const lines = [];
+        for (const item of inputData) {
+            lines.push(item.name + '=' + item.value);
+        }
+        const content = lines.join('\n');
+        const blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const now = new Date();
+        const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+        a.download = `水闸闸顶高程_输入参数_${ts}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    // ============================================================
+    //  收集所有输入数据（供TXT导出和Word导出共用）
+    // ============================================================
+    function collectInputData() {
+        const projectClassEl = document.getElementById('projectClass');
+        const structureLevelEl = document.getElementById('structureLevel');
+        const isAutoWave = document.getElementById('tab-auto').classList.contains('show');
+        
+        const classNames = { I: 'Ⅰ等 — 大（1）型', II: 'Ⅱ等 — 大（2）型', III: 'Ⅲ等 — 中型', IV: 'Ⅳ等 — 小（1）型', V: 'Ⅴ等 — 小（2）型' };
+        
+        const data = [
+            { name: '工程等别', value: classNames[projectClassEl.value] || projectClassEl.value, unit: '', remark: '' },
+            { name: '建筑物级别', value: structureLevelEl.value + ' 级', unit: '', remark: '' },
+            { name: '正常蓄水位 ∇_正', value: document.getElementById('normalWL').value, unit: 'm', remark: '' },
+            { name: '最高挡水位 ∇_挡', value: document.getElementById('retainWL').value, unit: 'm', remark: '' },
+            { name: '设计洪水位 ∇_设', value: document.getElementById('designFL').value, unit: 'm', remark: '' },
+            { name: '校核洪水位 ∇_校', value: document.getElementById('checkFL').value, unit: 'm', remark: '' },
+            { name: '防洪(挡潮)堤顶高程 ∇_堤顶', value: document.getElementById('leveeElev').value || '（未填）', unit: 'm', remark: '选填' },
+            { name: '交通桥厚度', value: document.getElementById('bridgeThick').value, unit: 'm', remark: '梁板结构总厚' },
+            { name: '闸前平均水深 H_m', value: document.getElementById('avgDepth').value, unit: 'm', remark: '用于波浪计算' },
+            { name: '波浪计算方式', value: isAutoWave ? '自动计算（莆田公式）' : '手动输入', unit: '', remark: '' },
+        ];
+        
+        if (isAutoWave) {
+            data.push(
+                { name: '计算风速 W', value: document.getElementById('windSpeed').value, unit: 'm/s', remark: '基本组合取重现期50年年最大风速' },
+                { name: '风区长度 D', value: document.getElementById('fetchLen').value, unit: 'm', remark: '取对岸至水闸前沿直线距离' },
+                { name: '闸前水深 H（波浪）', value: document.getElementById('waterDepth').value, unit: 'm', remark: '计算水位与设计状况静水位一致' },
+            );
+        } else {
+            data.push(
+                { name: '波浪计算高度 R（手动）', value: document.getElementById('manualWaveH').value, unit: 'm', remark: '= h_p% + h_z' },
+            );
+        }
+        
+        return data;
+    }
+    
+    // ============================================================
+    //  TXT 导入：从TXT文件载入数据
+    // ============================================================
+    function importFromTxt(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const content = e.target.result;
+                const lines = content.split(/\r?\n/);
+                const paramMap = {};
+                for (let i = 0; i < lines.length; i++) {
+                    let line = lines[i].trim();
+                    if (!line) continue;
+                    if (line.charCodeAt(0) === 0xFEFF) line = line.substring(1);
+                    const eqIdx = line.indexOf('=');
+                    if (eqIdx <= 0) continue;
+                    const name = line.substring(0, eqIdx).trim();
+                    const value = line.substring(eqIdx + 1).trim();
+                    if (name) paramMap[name] = value;
+                }
+
+                applyImportData(paramMap);
+                alert('✅ 数据载入成功！请检查各参数值，点击"计算闸顶高程"重新计算。');
+
+            } catch (err) {
+                alert('❌ 读取TXT文件失败：' + err.message);
+            }
+        };
+        reader.readAsText(file, 'utf-8');
+    }
+    
+    // ============================================================
+    //  将导入的TXT数据填充到表单
+    // ============================================================
+    function applyImportData(paramMap) {
+        // 工程等别 — 反向查找
+        const classReverse = {
+            'Ⅰ等 — 大（1）型': 'I', 'Ⅰ等-大（1）型': 'I', 'I': 'I',
+            'Ⅱ等 — 大（2）型': 'II', 'Ⅱ等-大（2）型': 'II', 'II': 'II',
+            'Ⅲ等 — 中型': 'III', 'Ⅲ等-中型': 'III', 'III': 'III',
+            'Ⅳ等 — 小（1）型': 'IV', 'Ⅳ等-小（1）型': 'IV', 'IV': 'IV',
+            'Ⅴ等 — 小（2）型': 'V', 'Ⅴ等-小（2）型': 'V', 'V': 'V',
+        };
+        
+        // 辅助：按参数名称匹配（支持模糊匹配）
+        function findVal(keywords) {
+            for (const [k, v] of Object.entries(paramMap)) {
+                for (const kw of keywords) {
+                    if (k.includes(kw)) return v;
+                }
+            }
+            return null;
+        }
+        
+        function setIfFound(id, keywords) {
+            const val = findVal(keywords);
+            if (val !== null && val !== '（未填）' && val !== '') {
+                document.getElementById(id).value = val;
+            }
+        }
+        
+        // 工程等别
+        const clsVal = findVal(['工程等别']);
+        if (clsVal && classReverse[clsVal]) {
+            document.getElementById('projectClass').value = classReverse[clsVal];
+            document.getElementById('structureLevel').value = classToLevel[classReverse[clsVal]];
+            updateLevelHint();
+        }
+        
+        // 建筑物级别
+        const lvlVal = findVal(['建筑物级别']);
+        if (lvlVal) {
+            const lvl = lvlVal.replace(/[^0-9]/g, '');
+            if (lvl >= 1 && lvl <= 5) document.getElementById('structureLevel').value = lvl;
+            updateLevelHint();
+        }
+        
+        // 水位参数
+        setIfFound('normalWL', ['正常蓄水位']);
+        setIfFound('retainWL', ['最高挡水位']);
+        setIfFound('designFL', ['设计洪水位']);
+        setIfFound('checkFL', ['校核洪水位']);
+        setIfFound('leveeElev', ['防洪', '挡潮', '堤顶']);
+        setIfFound('bridgeThick', ['交通桥厚度', '桥厚']);
+        setIfFound('avgDepth', ['平均水深']);
+        
+        // 波浪参数
+        const waveMode = findVal(['波浪计算方式']);
+        if (waveMode && waveMode.includes('手动')) {
+            // 切换到手动模式
+            document.querySelectorAll('#tab-manual').forEach(el => el.classList.add('show'));
+            document.querySelectorAll('#tab-auto').forEach(el => el.classList.remove('show'));
+            const tabBtns = document.querySelectorAll('.card .tab-btn');
+            tabBtns.forEach(b => b.classList.remove('active'));
+            // 激活手动tab
+            document.querySelector('[data-tab="tab-manual"]').classList.add('active');
+            setIfFound('manualWaveH', ['波浪计算高度', 'R', '手动']);
+        } else if (waveMode && waveMode.includes('自动')) {
+            setIfFound('windSpeed', ['风速']);
+            setIfFound('fetchLen', ['风区长度']);
+            setIfFound('waterDepth', ['闸前水深', '水深（波浪）']);
+        }
+    }
+
+    // ============================================================
+    //  Word 导出：保存完整计算过程（含公式）
+    // ============================================================
+    function exportToWord() {
+        const calc = performInternalCalc();
+        if (!calc) {
+            alert('计算失败，请检查输入参数是否完整。');
+            return;
+        }
+        const html = buildWordHTML(calc);
+        const now = new Date();
+        const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+        const filename = `水闸闸顶高程_计算书_${ts}.doc`;
+        const blob = new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function performInternalCalc() {
+        try {
+            const level = parseInt(document.getElementById('structureLevel').value);
+            const normalWL = parseFloat(document.getElementById('normalWL').value);
+            const retainWL = parseFloat(document.getElementById('retainWL').value);
+            const designFL = parseFloat(document.getElementById('designFL').value);
+            const checkFL = parseFloat(document.getElementById('checkFL').value);
+            const leveeElevVal = document.getElementById('leveeElev').value;
+            const leveeElev = leveeElevVal ? parseFloat(leveeElevVal) : null;
+            const bridgeThick = parseFloat(document.getElementById('bridgeThick').value) || 0;
+            const avgDepth = parseFloat(document.getElementById('avgDepth').value);
+            if (isNaN(normalWL) || isNaN(retainWL) || isNaN(designFL) || isNaN(checkFL)) return null;
+
+            const isAutoWave = document.getElementById('tab-auto').classList.contains('show');
+            let waveHeight, hm, Tm, Lm, hp, hz, pVal, waveDetail;
+
+            if (isAutoWave) {
+                const W = parseFloat(document.getElementById('windSpeed').value);
+                const D = parseFloat(document.getElementById('fetchLen').value);
+                const H = parseFloat(document.getElementById('waterDepth').value);
+                const gHW2 = g * H / (W * W);
+                const gDW2 = g * D / (W * W);
+                const term1_inner = 0.7 * Math.pow(gHW2, 0.7);
+                const th_term1 = Math.tanh(term1_inner);
+                const numerator = 0.0018 * Math.pow(gDW2, 0.45);
+                const denom = 0.13 * th_term1;
+                const term2_inner = numerator / denom;
+                const th_term2 = Math.tanh(term2_inner);
+                hm = (W * W / g) * 0.13 * th_term1 * th_term2;
+                Tm = (W / g) * 13.9 * Math.sqrt(g * hm / (W * W));
+                Lm = (g * Tm * Tm) / (2 * Math.PI);
+                for (let iter = 0; iter < 30; iter++) {
+                    const arg = 2 * Math.PI * H / Lm;
+                    if (arg > 300) break;
+                    const nLm = (g * Tm * Tm) / (2 * Math.PI) * Math.tanh(arg);
+                    if (Math.abs(nLm - Lm) < 1e-6) break;
+                    Lm = nLm;
+                }
+                pVal = waveP[level];
+                const pCol = pColMap[pVal];
+                const hmHm = Math.min(hm / Math.max(avgDepth, 0.01), 0.5);
+                const ratio = interpolateRatio(hmHm, pCol);
+                hp = hm * ratio;
+                const argCth = 2 * Math.PI * H / Math.max(Lm, 0.01);
+                const cthVal = argCth > 20 ? 1 : (1 / Math.tanh(argCth));
+                hz = (Math.PI * hp * hp / Math.max(Lm, 0.01)) * cthVal;
+                waveHeight = hp + hz;
+                waveDetail = { isAuto: true, W, D, H, gHW2, gDW2, term1_inner, th_term1, numerator, denom, term2_inner, th_term2, hm, Tm, Lm, pVal, hmHm, ratio, hp, argCth, cthVal, hz, waveHeight };
+            } else {
+                waveHeight = parseFloat(document.getElementById('manualWaveH').value) || 0;
+                waveDetail = { isAuto: false, waveHeight };
+            }
+
+            const safe = safetyAdd[level];
+            const A_retain_normal = safe.retain_normal;
+            const A_retain_max = safe.retain_max;
+            const A_discharge_design = safe.discharge_design;
+            const A_discharge_check = safe.discharge_check;
+
+            const candidates = [
+                { name: '挡水-正常蓄水位', value: normalWL + waveHeight + A_retain_normal, formula: `∇_正(${normalWL.toFixed(2)}) + R(${waveHeight.toFixed(3)}) + A(${A_retain_normal})` },
+                { name: '挡水-最高挡水位', value: retainWL + waveHeight + A_retain_max, formula: `∇_挡(${retainWL.toFixed(2)}) + R(${waveHeight.toFixed(3)}) + A(${A_retain_max})` },
+                { name: '泄水-设计洪水位', value: designFL + A_discharge_design, formula: `∇_设(${designFL.toFixed(2)}) + A(${A_discharge_design})` },
+                { name: '泄水-校核洪水位', value: checkFL + A_discharge_check, formula: `∇_校(${checkFL.toFixed(2)}) + A(${A_discharge_check})` },
+            ];
+            let allCands = [...candidates];
+            if (leveeElev !== null && !isNaN(leveeElev)) allCands.push({ name: '防洪堤顶高程', value: leveeElev });
+
+            let maxElev = Math.max(...allCands.map(c => c.value));
+            let controlling = candidates.filter(c => Math.abs(c.value - maxElev) < 0.001);
+            if (controlling.length === 0 && leveeElev !== null) controlling = [{ name: '防洪堤顶高程', value: leveeElev }];
+
+            let bridgeAdjusted = false;
+            const maxFloodLevel = Math.max(normalWL, retainWL, designFL, checkFL);
+            const bridgeReqElev = maxFloodLevel + 0.5 + bridgeThick;
+            if (maxElev < bridgeReqElev) {
+                bridgeAdjusted = true;
+                maxElev = bridgeReqElev;
+                controlling = [{ name: '交通桥底高程控制（抬升后）', value: maxElev }];
+            }
+
+            const bridgeBottomElev = maxElev - bridgeThick;
+            const bridgeCheckVal = bridgeBottomElev - maxFloodLevel;
+            const gateFreeboardCheck = maxElev - retainWL;
+            const checks = [
+                { name: '露顶式闸门顶部超高', condition: `闸顶(${maxElev.toFixed(2)}) − 最高挡水位(${retainWL.toFixed(2)}) = ${gateFreeboardCheck.toFixed(2)} m`, pass: gateFreeboardCheck >= 0.3, req: '≥ 0.3 m', actual: gateFreeboardCheck.toFixed(2) + ' m' },
+                { name: '桥梁(板)底高程', condition: `∇_桥底(${bridgeBottomElev.toFixed(2)}) = ∇_闸顶(${maxElev.toFixed(2)}) − 桥厚(${bridgeThick.toFixed(2)})，高出最高洪水位 ${bridgeCheckVal.toFixed(2)} m`, pass: bridgeCheckVal >= 0.5, req: '≥ 0.5 m', actual: bridgeCheckVal.toFixed(2) + ' m' },
+            ];
+
+            const classNames = { I: 'Ⅰ等—大（1）型', II: 'Ⅱ等—大（2）型', III: 'Ⅲ等—中型', IV: 'Ⅳ等—小（1）型', V: 'Ⅴ等—小（2）型' };
+            return { level, normalWL, retainWL, designFL, checkFL, leveeElev, bridgeThick, avgDepth, waveDetail, A_retain_normal, A_retain_max, A_discharge_design, A_discharge_check, candidates, maxElev, controlling, bridgeAdjusted, maxFloodLevel, bridgeBottomElev, bridgeCheckVal, gateFreeboardCheck, checks, projectClass: classNames[document.getElementById('projectClass').value] };
+        } catch (e) { console.error(e); return null; }
+    }
+
+    function buildWordHTML(calc) {
+        const w = calc.waveDetail;
+        let waveSec = '';
+        if (w.isAuto) {
+            waveSec = `
+                <h3>2.2 莆田试验站公式计算平均波高 h<sub>m</sub></h3>
+                <p style="margin-left:20px;font-family:monospace;font-size:11pt;">
+                    g·H/W² = ${g.toFixed(2)} × ${w.H.toFixed(1)} / ${w.W.toFixed(1)}² = ${w.gHW2.toFixed(6)}<br>
+                    g·D/W² = ${g.toFixed(2)} × ${w.D} / ${w.W.toFixed(1)}² = ${w.gDW2.toFixed(6)}<br>
+                    th₁ = tanh(0.7 × (gH/W²)^0.7) = tanh(0.7 × ${w.gHW2.toFixed(6)}^0.7) = ${w.th_term1.toFixed(6)}<br>
+                    th₂ = tanh(0.0018×(gD/W²)^0.45 / (0.13×th₁)) = ${w.th_term2.toFixed(6)}<br>
+                    <b style="color:#1a56db;">h<sub>m</sub> = (W²/g) × 0.13 × th₁ × th₂ = ${w.hm.toFixed(4)} m</b>
+                </p>
+                <h3>2.3 平均波周期 T<sub>m</sub></h3>
+                <p style="margin-left:20px;font-family:monospace;">
+                    T<sub>m</sub> = (W/g) × 13.9 × √(g·h<sub>m</sub>/W²) = ${w.Tm.toFixed(3)} s
+                </p>
+                <h3>2.4 平均波长 L<sub>m</sub>（迭代求解）</h3>
+                <p style="margin-left:20px;font-family:monospace;">
+                    L<sub>m</sub> = (g·T<sub>m</sub>² / 2π) × tanh(2πH/L<sub>m</sub>) = ${w.Lm.toFixed(3)} m
+                </p>
+                <h3>2.5 设计波高 h<sub>p%</sub></h3>
+                <p>波列累积频率（${calc.level}级水闸）：P = ${w.pVal}%</p>
+                <p style="margin-left:20px;font-family:monospace;">
+                    h<sub>m</sub>/H<sub>m</sub> = ${w.hm.toFixed(4)}/${calc.avgDepth.toFixed(1)} = ${w.hmHm.toFixed(4)}<br>
+                    查表插值 → h<sub>p%</sub>/h<sub>m</sub> = ${w.ratio.toFixed(3)}<br>
+                    <b style="color:#1a56db;">h<sub>p%</sub> = h<sub>m</sub> × 比值 = ${w.hp.toFixed(4)} m</b>
+                </p>
+                <h3>2.6 波浪中心线至静水位高差 h<sub>z</sub></h3>
+                <p style="margin-left:20px;font-family:monospace;">
+                    h<sub>z</sub> = (π·h<sub>p%</sub>²/L<sub>m</sub>) × cth(2πH/L<sub>m</sub>)<br>
+                    = (π × ${w.hp.toFixed(4)}² / ${w.Lm.toFixed(3)}) × cth(${w.argCth.toFixed(4)}) = ${w.hz.toFixed(4)} m
+                </p>
+                <h3>2.7 波浪计算高度 R</h3>
+                <p style="margin-left:20px;font-family:monospace;color:#1a56db;font-size:13pt;">
+                    <b>R = h<sub>p%</sub> + h<sub>z</sub> = ${w.hp.toFixed(4)} + ${w.hz.toFixed(4)} = ${w.waveHeight.toFixed(4)} m</b>
+                </p>`;
+        } else {
+            waveSec = `<h3>2.2 波浪计算高度 R（手动输入）</h3>
+                <p style="margin-left:20px;font-family:monospace;color:#1a56db;"><b>R = ${w.waveHeight.toFixed(3)} m</b></p>`;
+        }
+
+        const wH = w.isAuto ? w.waveHeight.toFixed(4) : w.waveHeight.toFixed(3);
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:DoNotPromoteQF/></w:WordDocument></xml><![endif]-->
+<style>
+@page { size: A4; margin: 2.54cm 3.18cm 2.54cm 3.18cm; }
+body { font-family: "宋体",SimSun,serif; font-size:12pt; line-height:1.8; color:#000; }
+h1 { text-align:center; font-size:18pt; font-weight:bold; margin-bottom:4pt; }
+h2 { font-size:14pt; font-weight:bold; margin-top:16pt; margin-bottom:6pt; border-bottom:1px solid #333; padding-bottom:3pt; }
+h3 { font-size:12pt; font-weight:bold; margin-top:10pt; margin-bottom:4pt; }
+p { margin:3pt 0; }
+table { border-collapse:collapse; width:100%; margin:8pt 0; }
+table th, table td { border:1px solid #000; padding:3pt 6pt; font-size:10pt; }
+table th { background-color:#ddd; font-weight:bold; text-align:center; }
+table td { text-align:center; }
+.imp { background-color:#fffde7; padding:6pt; border-left:4px solid #ffc107; margin:6pt 0; }
+.subt { text-align:center; font-size:10pt; color:#666; margin-bottom:12pt; }
+</style></head><body>
+<h1>水闸闸顶高程计算书</h1>
+<p class="subt">依据《SL 265-2016 水闸设计规范》 | ${new Date().toLocaleString('zh-CN')}</p>
+
+<h2>一、基本参数</h2>
+<table>
+<tr><th style="width:38%;">参数名称</th><th style="width:20%;">数值</th><th style="width:12%;">单位</th><th style="width:30%;">备注</th></tr>
+<tr><td>工程等别</td><td>${calc.projectClass}</td><td></td><td></td></tr>
+<tr><td>建筑物级别</td><td>${calc.level} 级</td><td></td><td>永久性主要建筑物</td></tr>
+<tr><td>正常蓄水位 ∇<sub>正</sub></td><td>${calc.normalWL.toFixed(2)}</td><td>m</td><td></td></tr>
+<tr><td>最高挡水位 ∇<sub>挡</sub></td><td>${calc.retainWL.toFixed(2)}</td><td>m</td><td></td></tr>
+<tr><td>设计洪水位 ∇<sub>设</sub></td><td>${calc.designFL.toFixed(2)}</td><td>m</td><td></td></tr>
+<tr><td>校核洪水位 ∇<sub>校</sub></td><td>${calc.checkFL.toFixed(2)}</td><td>m</td><td></td></tr>
+${calc.leveeElev !== null ? `<tr><td>防洪(挡潮)堤顶高程 ∇<sub>堤顶</sub></td><td>${calc.leveeElev.toFixed(2)}</td><td>m</td><td></td></tr>` : ''}
+<tr><td>交通桥厚度</td><td>${calc.bridgeThick.toFixed(2)}</td><td>m</td><td>梁板结构总厚</td></tr>
+<tr><td>闸前平均水深 H<sub>m</sub></td><td>${calc.avgDepth.toFixed(1)}</td><td>m</td><td>波浪计算用</td></tr>
+</table>
+
+<h2>二、波浪计算</h2>
+<h3>2.1 波浪计算参数</h3>
+${w.isAuto ? `<table>
+<tr><th>参数名称</th><th>数值</th><th>单位</th></tr>
+<tr><td>计算风速 W</td><td>${w.W.toFixed(1)}</td><td>m/s</td></tr>
+<tr><td>风区长度 D</td><td>${w.D}</td><td>m</td></tr>
+<tr><td>闸前水深 H</td><td>${w.H.toFixed(1)}</td><td>m</td></tr>
+<tr><td>重力加速度 g</td><td>${g.toFixed(2)}</td><td>m/s²</td></tr>
+</table>` : '<p><b>波浪计算方式：手动输入</b></p>'}
+${waveSec}
+
+<h2>三、安全加高（水闸 ${calc.level} 级）</h2>
+<table>
+<tr><th>运用工况</th><th>符号</th><th>安全加高 (m)</th></tr>
+<tr><td>挡水时 — 正常蓄水位</td><td>A<sub>挡,正</sub></td><td>${calc.A_retain_normal.toFixed(1)}</td></tr>
+<tr><td>挡水时 — 最高挡水位</td><td>A<sub>挡,最</sub></td><td>${calc.A_retain_max.toFixed(1)}</td></tr>
+<tr><td>泄水时 — 设计洪水位</td><td>A<sub>泄,设</sub></td><td>${calc.A_discharge_design.toFixed(1)}</td></tr>
+<tr><td>泄水时 — 校核洪水位</td><td>A<sub>泄,校</sub></td><td>${calc.A_discharge_check.toFixed(1)}</td></tr>
+</table>
+
+<h2>四、各工况闸顶高程计算</h2>
+<p><b>挡水时：</b>∇<sub>闸顶</sub> = 水位 + R + A&emsp;&emsp;<b>泄水时：</b>∇<sub>闸顶</sub> = 水位 + A</p>
+<table>
+<tr><th>序号</th><th>计算工况</th><th>计算公式</th><th>结果(m)</th><th>控制</th></tr>
+<tr><td>1</td><td>挡水-正常蓄水位</td><td style="font-size:9pt;">${calc.normalWL.toFixed(2)} + ${wH} + ${calc.A_retain_normal.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[0].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[0].name)?'⭐':''}</td></tr>
+<tr><td>2</td><td>挡水-最高挡水位</td><td style="font-size:9pt;">${calc.retainWL.toFixed(2)} + ${wH} + ${calc.A_retain_max.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[1].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[1].name)?'⭐':''}</td></tr>
+<tr><td>3</td><td>泄水-设计洪水位</td><td style="font-size:9pt;">${calc.designFL.toFixed(2)} + ${calc.A_discharge_design.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[2].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[2].name)?'⭐':''}</td></tr>
+<tr><td>4</td><td>泄水-校核洪水位</td><td style="font-size:9pt;">${calc.checkFL.toFixed(2)} + ${calc.A_discharge_check.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[3].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[3].name)?'⭐':''}</td></tr>
+${calc.leveeElev !== null ? `<tr><td>5</td><td>防洪(挡潮)堤顶高程</td><td style="font-size:9pt;">∇_堤顶 = ${calc.leveeElev.toFixed(2)}</td><td>${calc.leveeElev.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name==='防洪堤顶高程')?'⭐':''}</td></tr>` : ''}
+</table>
+${calc.bridgeAdjusted ? `<div class="imp"><p><b>⚠ 交通桥底高程调整：</b>桥底高程不满足高出最高洪水位 ≥ 0.5m 要求，闸顶高程已自动抬升至 <b>${calc.maxElev.toFixed(2)} m</b>。</p></div>` : ''}
+
+<h2>五、最终推荐闸顶高程</h2>
+<div class="imp"><p style="font-size:14pt;font-weight:bold;color:#1a56db;text-align:center;">∇<sub>闸顶</sub> = ${calc.maxElev.toFixed(2)} m</p>
+<p style="text-align:center;">控制工况：${calc.controlling.map(c=>c.name).join('、')}</p></div>
+
+<h2>六、交通桥底高程</h2>
+<p style="font-size:11pt;"><b>∇<sub>桥底</sub> = ∇<sub>闸顶</sub> − 桥厚 = ${calc.maxElev.toFixed(2)} − ${calc.bridgeThick.toFixed(2)} = ${calc.bridgeBottomElev.toFixed(2)} m</b></p>
+<p>高出最高洪水位(${calc.maxFloodLevel.toFixed(2)}m)：${calc.bridgeCheckVal.toFixed(2)} m ${calc.bridgeCheckVal>=0.5?'✅ 满足 ≥ 0.5m':'❌ 不满足'}</p>
+
+<h2>七、复核检查</h2>
+<table>
+<tr><th>检查项</th><th>条件</th><th>要求</th><th>实际值</th><th>结果</th></tr>
+${calc.checks.map(c=>`<tr><td style="text-align:left;">${c.name}</td><td style="font-size:9pt;text-align:left;">${c.condition}</td><td>${c.req}</td><td>${c.actual}</td><td style="color:${c.pass?'#38a169':'#e53e3e'};font-weight:bold;">${c.pass?'✅满足':'❌不满足'}</td></tr>`).join('')}
+</table>
+
+<p style="text-align:center;color:#999;font-size:9pt;margin-top:16pt;">本计算书由「水闸闸顶高程计算器」自动生成，依据《SL 265-2016 水闸设计规范》，仅供参考。</p>
+</body></html>`;
+    }
+
+    function clearAll() {
+        document.getElementById('normalWL').value = '45.50';
+        document.getElementById('retainWL').value = '46.80';
+        document.getElementById('designFL').value = '47.50';
+        document.getElementById('checkFL').value = '48.20';
+        document.getElementById('leveeElev').value = '';
+        document.getElementById('bridgeThick').value = '0.80';
+        document.getElementById('avgDepth').value = '4.5';
+        document.getElementById('windSpeed').value = '18.0';
+        document.getElementById('fetchLen').value = '500';
+        document.getElementById('waterDepth').value = '4.5';
+        document.getElementById('manualWaveH').value = '0.80';
+        document.getElementById('projectClass').value = 'III';
+        document.getElementById('structureLevel').value = '3';
+        updateLevelHint();
+        document.getElementById('resultArea').style.display = 'none';
+    }
+
+    // 初始显示时自动计算一次
+    window.addEventListener('DOMContentLoaded', function () {
+        setTimeout(calculate, 100);
+    });
+</script>
+</body>
+</html>

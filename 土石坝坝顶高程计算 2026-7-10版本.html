@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>土石坝坝顶高程计算 - SL274-2001</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: #f0f4f8;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #1a3a5c;
+            font-size: 28px;
+            margin-bottom: 5px;
+            padding: 20px 0 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #1a3a5c;
+            padding-bottom: 15px;
+        }
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            background: #e8edf2;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab-btn:hover { background: #d0d8e0; }
+        .tab-btn.active {
+            background: #1a3a5c;
+            color: #fff;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a3a5c;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8edf2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icon {
+            display: inline-flex;
+            width: 28px; height: 28px;
+            background: #1a3a5c;
+            color: #fff;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 30px;
+        }
+        .form-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select {
+            padding: 8px 10px;
+            border: 1.5px solid #d0d8e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.2s;
+            background: #fafafa;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1a3a5c;
+            background: #fff;
+        }
+        .form-group .hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .section-divider {
+            border-top: 1px dashed #d0d8e0;
+            margin: 18px 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+        .btn {
+            padding: 10px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #1a3a5c;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #2a5a8c; }
+        .btn-secondary {
+            background: #e8edf2;
+            color: #555;
+        }
+        .btn-secondary:hover { background: #d0d8e0; }
+
+        .result-area {
+            background: #f8fafc;
+            border: 2px solid #1a3a5c;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        .result-area h3 {
+            color: #1a3a5c;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .result-table th, .result-table td {
+            padding: 8px 12px;
+            border: 1px solid #d0d8e0;
+            text-align: center;
+        }
+        .result-table th {
+            background: #1a3a5c;
+            color: #fff;
+            font-weight: 600;
+        }
+        .result-table tr:nth-child(even) { background: #f0f4f8; }
+        .result-table tr:hover { background: #e0e8f0; }
+        .highlight-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: #d32f2f;
+        }
+        .pass { color: #2e7d32; font-weight: 700; }
+        .fail { color: #d32f2f; font-weight: 700; }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1a3a5c;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .info-box strong { color: #1a3a5c; }
+
+        .wave-formula-box {
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            font-family: "Cambria Math", "Times New Roman", serif;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-grid.col3 { grid-template-columns: 1fr; }
+            .tab-btn { font-size: 13px; padding: 10px 6px; }
+            .card { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🌊 土石坝坝顶高程计算</h1>
+    <div class="subtitle">依据《碾压式土石坝设计规范》SL274-2020 · 多工况自动计算<br>作者：龙龙</div>
+
+    <!-- 选项卡 -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('basic')">📐 基本参数</button>
+        <button class="tab-btn" onclick="switchTab('wave')">🌊 波浪计算</button>
+        <button class="tab-btn" onclick="switchTab('result')">📊 计算结果</button>
+        <button class="tab-btn" onclick="switchTab('help')">📖 规范说明</button>
+    </div>
+
+    <!-- ========== Tab1: 基本参数 ========== -->
+    <div id="tab-basic" class="tab-content active">
+        <div class="card">
+            <div class="card-title"><span class="icon">1</span> 工程基本信息</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>坝的级别</label>
+                    <select id="damGrade">
+                        <option value="1">1 级</option>
+                        <option value="2">2 级</option>
+                        <option value="3">3 级</option>
+                        <option value="4">4 级</option>
+                        <option value="5" selected>5 级</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>坝址所属区域（非常运用）</label>
+                    <select id="regionType">
+                        <option value="mountain">山区、丘陵区</option>
+                        <option value="plain" selected>平原、滨海区</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>水库类型（波浪公式）</label>
+                    <select id="reservoirType">
+                        <option value="putian" selected>平原、滨海地区（莆田试验站公式）</option>
+                        <option value="hehe">丘陵平原地区（鹤地水库公式）</option>
+                        <option value="guanting">内陆峡谷地区（官厅水库公式）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>是否设置防浪墙</label>
+                    <select id="hasParapet" onchange="toggleParapet()">
+                        <option value="no">无防浪墙</option>
+                        <option value="yes">有防浪墙</option>
+                    </select>
+                </div>
+                <div class="form-group" id="parapetHeightGroup" style="display:none;">
+                    <label>防浪墙高度（m）</label>
+                    <input type="number" id="parapetHeight" value="1.2" step="0.05" min="0.5" max="3.0">
+                    <div class="hint">墙顶与坝顶的高差，一般取 1.0~1.5m</div>
+                </div>
+                <div class="form-group">
+                    <label>防渗体类型（防渗体顶高程计算）</label>
+                    <select id="coreType">
+                        <option value="inclined" selected>斜墙</option>
+                        <option value="vertical">心墙</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>护面糙率渗透性系数 K<sub>Δ</sub>（输入值）</label>
+                    <input type="number" id="surfaceType" value="0.90" step="0.01" min="0.40" max="1.00">
+                    <div class="hint">
+                        经验值：光滑不透水护面（沥青砼）1.00；砼或砼板 0.90；
+                        草皮护面 0.85~0.90；砌石护面 0.75~0.80；
+                        抛填两层块石（不透水基础）0.60~0.65；
+                        抛填两层块石（透水基础）0.50~0.55
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>坝坡坡度系数 m（cotα）</label>
+                    <input type="number" id="slopeM" value="3.0" step="0.1" min="1.0" max="6.0">
+                    <div class="hint">m = cotα，一般土石坝上游坡 2.5~4.0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">2</span> 特征水位</div>
+            <div class="form-grid col3">
+                <div class="form-group">
+                    <label>正常蓄水位 ∇<sub>正</sub>（m）</label>
+                    <input type="number" id="normalWL" value="100.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>设计洪水位 ∇<sub>设</sub>（m）</label>
+                    <input type="number" id="designWL" value="102.50" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>校核洪水位 ∇<sub>校</sub>（m）</label>
+                    <input type="number" id="checkWL" value="103.80" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">3</span> 风速与风区参数</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>多年平均年最大风速 W（m/s）</label>
+                    <input type="number" id="windSpeed" value="18.0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>风速测站高度 Z（m）</label>
+                    <input type="number" id="windHeight" value="10" step="1" min="1" max="50">
+                    <div class="hint">风速仪距水面高度</div>
+                </div>
+                <div class="form-group">
+                    <label>风区长度 D（m）</label>
+                    <input type="number" id="fetchLength" value="5000" step="100" min="100">
+                    <div class="hint">库面沿风向的最大直线距离</div>
+                </div>
+                <div class="form-group">
+                    <label>水域平均水深 H<sub>m</sub>（m）</label>
+                    <input type="number" id="avgDepth" value="15.0" step="0.5" min="1">
+                </div>
+                <div class="form-group">
+                    <label>坝前水深 H（m）</label>
+                    <input type="number" id="damDepth" value="25.0" step="0.5" min="1">
+                </div>
+                <div class="form-group">
+                    <label>风向与坝轴线法线夹角 β（°）</label>
+                    <input type="number" id="windAngle" value="0" step="5" min="0" max="90">
+                    <div class="hint">0°为正向来波</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">4</span> 地震参数（可选）</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>是否考虑地震工况</label>
+                    <select id="hasEarthquake" onchange="toggleEarthquake()">
+                        <option value="no">不考虑</option>
+                        <option value="yes" selected>考虑</option>
+                    </select>
+                </div>
+                <div class="form-group" id="eqIntensityGroup">
+                    <label>地震设计烈度</label>
+                    <select id="eqIntensity">
+                        <option value="7">Ⅶ 度</option>
+                        <option value="8" selected>Ⅷ 度</option>
+                        <option value="9">Ⅸ 度</option>
+                    </select>
+                </div>
+                <div class="form-group" id="eqSurgeGroup">
+                    <label>地震涌浪高度（m）</label>
+                    <input type="number" id="eqSurge" value="1.0" step="0.1" min="0.5" max="1.5">
+                    <div class="hint">规范建议 0.5~1.5m，依烈度和水深而定</div>
+                </div>
+                <div class="form-group" id="eqSettlementGroup">
+                    <label>地震沉陷（m）</label>
+                    <input type="number" id="eqSettlement" value="0.5" step="0.05" min="0">
+                    <div class="hint">良好坝体一般不超过坝高 0.5%~1.0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">5</span> 其他参数</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>防渗体沉降超高 Δh<sub>c</sub>（m）</label>
+                    <input type="number" id="coreSettlement" value="0.3" step="0.05" min="0">
+                    <div class="hint">防渗体竣工后的预留沉降超高</div>
+                </div>
+                <div class="form-group">
+                    <label>坝顶预留沉降超高（m）</label>
+                    <input type="number" id="damSettlement" value="0.5" step="0.05" min="0">
+                    <div class="hint">不计入坝高，竣工时另加</div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="calculateAll()">📊 开始计算</button>
+                <button class="btn btn-secondary" onclick="resetAll()">↺ 重置</button>
+            </div>
+            <div class="btn-group" style="margin-top:8px;">
+                <button class="btn btn-secondary" onclick="saveInputToTxt()" title="将所有输入参数保存为TXT文件">💾 保存输入参数 (TXT)</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('txtFileInput').click()" title="从TXT文件载入输入参数">📂 载入输入参数 (TXT)</button>
+                <input type="file" id="txtFileInput" accept=".txt" style="display:none;" onchange="loadInputFromTxt(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== Tab2: 波浪计算 ========== -->
+    <div id="tab-wave" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span class="icon">🌊</span> 波浪要素计算</div>
+            <p style="color:#666;margin-bottom:12px;">以下为波浪爬高 R 和风壅水面高度 e 的详细计算过程，供校核参考。</p>
+            <div id="waveCalcDetail">
+                <div class="info-box">请先在「基本参数」页面填写完整参数，点击"开始计算"后查看详细波浪计算过程。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== Tab3: 计算结果 ========== -->
+    <div id="tab-result" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span class="icon">📊</span> 坝顶高程计算结果汇总</div>
+            <div id="resultSummary">
+                <div class="info-box">请先在「基本参数」页面填写完整参数，点击"开始计算"后查看结果。</div>
+            </div>
+            <div id="wordExportBtn" style="text-align:center;margin-top:12px;display:none;">
+                <button class="btn btn-primary" onclick="exportToWord()">📝 导出计算书 (Word)</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">📋</span> 各工况详细计算</div>
+            <div id="resultDetail">
+                <div class="info-box">请先完成计算。</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">🧱</span> 防渗体顶部高程计算</div>
+            <div id="coreResult">
+                <div class="info-box">请先完成计算。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== Tab4: 规范说明 ========== -->
+    <div id="tab-help" class="tab-content">
+        <div class="card">
+            <div class="card-title"><span class="icon">📖</span> 规范依据及计算公式说明</div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">一、坝顶超高基本公式（5.3.1）</h4>
+            <div class="wave-formula-box">
+                <b>Y = R + e + A</b><br>
+                式中：Y — 坝顶超高（m）；R — 最大波浪爬高（m）；<br>
+                e — 最大风壅水面高度（m）；A — 安全加高（m）
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">二、安全加高 A 值（表5.3.1）</h4>
+            <table class="result-table" style="width:auto;">
+                <tr><th>坝的级别</th><th>1级</th><th>2级</th><th>3级</th><th>4、5级</th></tr>
+                <tr><td><b>正常运用</b></td><td>1.50</td><td>1.00</td><td>0.70</td><td>0.50</td></tr>
+                <tr><td><b>非常运用（山区、丘陵区）</b></td><td>0.70</td><td>0.50</td><td>0.40</td><td>0.30</td></tr>
+                <tr><td><b>非常运用（平原、滨海区）</b></td><td>1.00</td><td>0.70</td><td>0.50</td><td>0.30</td></tr>
+            </table>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">三、设计风速取值（5.3.6）</h4>
+            <div class="info-box">
+                <b>正常运用：</b>1、2级坝 → 1.5~2.0倍多年平均年最大风速；3~5级坝 → 1.5倍<br>
+                <b>非常运用：</b>采用多年平均年最大风速
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">四、风速高度修正（A.1.1）</h4>
+            <div class="wave-formula-box">
+                W<sub>10</sub> = K<sub>Z</sub> · W<sub>Z</sub><br>
+                高度Z(m): 2, 5, 10, 15, 20<br>
+                K<sub>Z</sub>: 1.25, 1.10, 1.00, 0.96, 0.90
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">五、风壅水面高度（A.1.10）</h4>
+            <div class="wave-formula-box">
+                e = K · W² · D · cosβ / (2g · H<sub>m</sub>)<br>
+                式中：K=3.6×10⁻⁶（综合摩阻系数），g=9.81m/s²
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">六、波浪爬高计算</h4>
+            <div class="info-box">
+                <b>当 m=1.5~5.0 时：</b> R<sub>m</sub> = (K<sub>Δ</sub> · K<sub>W</sub> / √(1+m²)) · √(h<sub>m</sub>·L<sub>m</sub>)<br>
+                <b>当 m≤1.25 时：</b> R<sub>m</sub> = K<sub>Δ</sub> · K<sub>W</sub> · R₀ · h<sub>m</sub><br>
+                <b>当 1.25&lt;m&lt;1.5 时：</b> 内插计算<br><br>
+                <b>设计爬高取值：</b>1、2、3级坝取 R<sub>1%</sub>；4、5级坝取 R<sub>5%</sub>
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">七、坝顶高程计算工况（5.3.3）</h4>
+            <div class="info-box">
+                取以下四种工况的最大值：<br>
+                ① 正常蓄水位 + 正常运用坝顶超高<br>
+                ② 设计洪水位 + 正常运用坝顶超高<br>
+                ③ 校核洪水位 + 非常运用坝顶超高<br>
+                ④ 正常蓄水位 + 非常运用坝顶超高 + 地震安全加高（地震区）
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">八、有防浪墙情况</h4>
+            <div class="info-box">
+                <b>墙顶高程：</b>按四种工况取最大值 ∇<sub>max</sub><br>
+                <b>坝顶高程：</b>∇<sub>顶</sub> = ∇<sub>max</sub> - H<sub>墙</sub>（防浪墙高度，由用户输入）<br>
+                <b>复核：</b>正常运用 ∇<sub>顶</sub> > ∇<sub>正</sub>+0.5 且 > ∇<sub>设</sub>+0.5；非常运用 ∇<sub>顶</sub> ≥ ∇<sub>校</sub>
+            </div>
+
+            <h4 style="color:#1a3a5c;margin:12px 0 8px;">九、防渗体顶部高程</h4>
+            <div class="info-box">
+                <b>正常运用超高：</b>斜墙 Δh=0.6~0.8m；心墙 Δh=0.3~0.6m<br>
+                <b>防渗体顶高程：</b>max(∇<sub>正</sub>+Δh, ∇<sub>设</sub>+Δh) 取大值 → ∇<sub>max</sub><br>
+                <b>非常复核：</b>∇<sub>max</sub> ≥ ∇<sub>校</sub> + R，否则由校核水位+爬高控制<br>
+                <b>最终：</b>∇<sub>顶</sub> = ∇<sub>max</sub> + Δh<sub>c</sub>（沉降超高）
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== 全局变量：存储最近一次计算结果供Word导出 =====================
+var lastCalcResult = null;
+
+// ===================== 按需懒加载CDN库（避免打开页面时阻塞） =====================
+var _libLoadState = { xlsx: null, docx: null };
+
+function _loadScript(url) {
+    return new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = url;
+        s.onload = function() { resolve(); };
+        s.onerror = function() { reject(new Error('加载失败: ' + url)); };
+        document.head.appendChild(s);
+    });
+}
+
+function _ensureXLSX(callback) {
+    if (typeof XLSX !== 'undefined') { callback(); return; }
+    if (_libLoadState.xlsx === 'loading') { setTimeout(function() { _ensureXLSX(callback); }, 50); return; }
+    _libLoadState.xlsx = 'loading';
+    _loadScript('https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js').then(function() {
+        _libLoadState.xlsx = 'loaded';
+        callback();
+    }).catch(function(e) {
+        _libLoadState.xlsx = null;
+        alert('Excel库加载失败，请检查网络连接。');
+    });
+}
+
+function _ensureDOCX(callback) {
+    if (typeof window.docx !== 'undefined') { callback(); return; }
+    if (_libLoadState.docx === 'loading') { setTimeout(function() { _ensureDOCX(callback); }, 50); return; }
+    _libLoadState.docx = 'loading';
+    _loadScript('https://unpkg.com/docx@8.5.0/build/index.umd.js').then(function() {
+        _libLoadState.docx = 'loaded';
+        callback();
+    }).catch(function(e) {
+        _libLoadState.docx = null;
+        alert('Word库加载失败，请检查网络连接。');
+    });
+}
+
+// ===================== 工具函数 =====================
+function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelector(`.tab-btn[onclick*="'${name}'"]`).classList.add('active');
+}
+
+function toggleParapet() {
+    const show = document.getElementById('hasParapet').value === 'yes';
+    document.getElementById('parapetHeightGroup').style.display = show ? '' : 'none';
+}
+
+function toggleEarthquake() {
+    const show = document.getElementById('hasEarthquake').value === 'yes';
+    document.getElementById('eqIntensityGroup').style.display = show ? '' : 'none';
+    document.getElementById('eqSurgeGroup').style.display = show ? '' : 'none';
+    document.getElementById('eqSettlementGroup').style.display = show ? '' : 'none';
+}
+// 初始状态
+toggleEarthquake();
+toggleParapet();
+
+function resetAll() {
+    if (confirm('确认重置所有参数为默认值？')) location.reload();
+}
+
+// 风速高度修正系数
+function getKz(z) {
+    const table = {2: 1.25, 5: 1.10, 10: 1.00, 15: 0.96, 20: 0.90};
+    if (table[z]) return table[z];
+    // 线性插值
+    const keys = Object.keys(table).map(Number).sort((a,b)=>a-b);
+    if (z <= keys[0]) return table[keys[0]];
+    if (z >= keys[keys.length-1]) return table[keys[keys.length-1]];
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (z >= keys[i] && z <= keys[i+1]) {
+            const t = (z - keys[i]) / (keys[i+1] - keys[i]);
+            return table[keys[i]] + t * (table[keys[i+1]] - table[keys[i]]);
+        }
+    }
+    return 1.0;
+}
+
+// 安全加高 A 值查询（表5.3.1）
+function getSafetyAllowance(grade, isNormal, region) {
+    const normalMap = {1: 1.50, 2: 1.00, 3: 0.70, 4: 0.50, 5: 0.50};
+    const abnormalMountain = {1: 0.70, 2: 0.50, 3: 0.40, 4: 0.30, 5: 0.30};
+    const abnormalPlain = {1: 1.00, 2: 0.70, 3: 0.50, 4: 0.30, 5: 0.30};
+
+    if (isNormal) return normalMap[grade] || 0.50;
+    return region === 'mountain' ? abnormalMountain[grade] : abnormalPlain[grade];
+}
+
+// 经验系数 Kw 查表 (W/√(gH))
+function getKw(w, H) {
+    const g = 9.81;
+    const ratio = w / Math.sqrt(g * H);
+    // 表值: W/√(gH) ≤1, 1.5, 2, 2.5, 3, 3.5, 4, ≥5
+    const ratios = [0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 100];
+    const kwVals = [1.00, 1.00, 1.02, 1.08, 1.16, 1.22, 1.25, 1.28, 1.30, 1.30];
+    for (let i = 0; i < ratios.length - 1; i++) {
+        if (ratio >= ratios[i] && ratio < ratios[i+1]) {
+            const t = (ratio - ratios[i]) / (ratios[i+1] - ratios[i]);
+            return kwVals[i] + t * (kwVals[i+1] - kwVals[i]);
+        }
+    }
+    return 1.30;
+}
+
+// 爬高与平均爬高比值 Rp/Rm 查表（A.1.13）
+function getRpRm(h_m, H, p) {
+    // hm/H 相对水深
+    const ratio = h_m / H;
+    let row;
+    if (ratio < 0.1) row = 0;
+    else if (ratio <= 0.3) row = 1;
+    else row = 2;
+
+    const table = {
+        0: {0.1: 2.66, 1: 2.23, 2: 2.07, 4: 1.90, 5: 1.84, 10: 1.64, 14: 1.53, 20: 1.39, 30: 1.22, 50: 0.96},
+        1: {0.1: 2.44, 1: 2.08, 2: 1.94, 4: 1.80, 5: 1.75, 10: 1.57, 14: 1.48, 20: 1.36, 30: 1.21, 50: 0.97},
+        2: {0.1: 2.13, 1: 1.86, 2: 1.76, 4: 1.65, 5: 1.61, 10: 1.48, 14: 1.39, 20: 1.31, 30: 1.19, 50: 0.99}
+    };
+
+    const keys = Object.keys(table[row]).map(Number).sort((a,b)=>a-b);
+    if (p <= keys[0]) return table[row][keys[0]];
+    if (p >= keys[keys.length-1]) return table[row][keys[keys.length-1]];
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (p >= keys[i] && p <= keys[i+1]) {
+            const t = (p - keys[i]) / (keys[i+1] - keys[i]);
+            return table[row][keys[i]] + t * (table[row][keys[i+1]] - table[row][keys[i]]);
+        }
+    }
+    return table[row][keys[keys.length-1]];
+}
+
+// 斜向来波折减系数 Kβ（A.1.15）
+function getKbeta(beta) {
+    const table = {0: 1.00, 10: 0.98, 20: 0.96, 30: 0.92, 40: 0.87, 50: 0.82, 60: 0.76};
+    const keys = Object.keys(table).map(Number).sort((a,b)=>a-b);
+    if (beta <= keys[0]) return table[keys[0]];
+    if (beta >= keys[keys.length-1]) return table[keys[keys.length-1]];
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (beta >= keys[i] && beta <= keys[i+1]) {
+            const t = (beta - keys[i]) / (keys[i+1] - keys[i]);
+            return table[keys[i]] + t * (table[keys[i+1]] - table[keys[i]]);
+        }
+    }
+    return 0.76;
+}
+
+// 莆田试验站公式 - 计算平均波高 hm
+function calcPutianHm(W, D, Hm) {
+    const g = 9.81;
+    // 迭代计算
+    const gHm_W2 = g * Hm / (W * W);
+    const gD_W2 = g * D / (W * W);
+    
+    // th(0.7 * (gHm/W^2)^0.7)
+    const thArg1 = 0.7 * Math.pow(gHm_W2, 0.7);
+    const th1 = Math.tanh(thArg1);
+    
+    // 内层 th 参数
+    const numerator = 0.0018 * Math.pow(gD_W2, 0.45);
+    const denominator = 0.13 * th1;
+    const thArg2 = numerator / denominator;
+    const th2 = Math.tanh(thArg2);
+    
+    const ghm_W2 = 0.13 * th1 * th2;
+    const hm = ghm_W2 * W * W / g;
+    return hm;
+}
+
+// 莆田试验站公式 - 计算平均波周期和波长
+function calcPutianTm(hm) {
+    return 4.438 * Math.pow(hm, 0.5);
+}
+
+function calcPutianLm(Tm, H) {
+    const g = 9.81;
+    // 先按深水波计算
+    let Lm = g * Tm * Tm / (2 * Math.PI);
+    // 检查是否浅水波
+    if (H < 0.5 * Lm) {
+        // 迭代计算浅水波波长
+        for (let i = 0; i < 20; i++) {
+            Lm = g * Tm * Tm / (2 * Math.PI) * Math.tanh(2 * Math.PI * H / Lm);
+        }
+    }
+    return Lm;
+}
+
+// 鹤地水库公式 - 计算 h2% 和 Lm
+function calcHeheH(W, D) {
+    const g = 9.81;
+    const gD_W2 = g * D / (W * W);
+    const ghm_W2 = 0.00625 * Math.pow(W, 1/6) * Math.pow(gD_W2, 1/3);
+    const hm = ghm_W2 * W * W / g;
+    // 鹤地公式直接给出 h2%
+    return hm; // 这个就是 h2%
+}
+
+function calcHeheLm(W, D) {
+    const g = 9.81;
+    const gD_W2 = g * D / (W * W);
+    const gLm_W2 = 0.0386 * Math.pow(gD_W2, 0.5);
+    return gLm_W2 * W * W / g;
+}
+
+// 官厅水库公式 - 简化公式
+function calcGuantingH(W, D) {
+    return 0.00166 * Math.pow(W, 1.25) * Math.pow(D, 1/3);
+}
+
+function calcGuantingLm(W, D) {
+    return 0.062 * Math.pow(W, 1.0016) * Math.pow(D, 1/3.75);
+}
+
+// 获取指定累积频率 P 的波高与平均波高比值 hp/hm（表A.1.8）
+function getHpRatio(p, hm_H) {
+    let row;
+    if (hm_H < 0.1) row = 0;
+    else if (hm_H <= 0.2) row = 1;
+    else row = 1;
+
+    const table = {
+        0: {0.01: 3.42, 0.1: 2.97, 1: 2.42, 2: 2.23, 4: 2.02, 5: 1.95, 10: 1.71, 14: 1.60, 20: 1.43, 50: 0.94, 90: 0.37},
+        1: {0.01: 3.25, 0.1: 2.82, 1: 2.30, 2: 2.13, 4: 1.93, 5: 1.87, 10: 1.64, 14: 1.54, 20: 1.38, 50: 0.95, 90: 0.43}
+    };
+
+    const keys = Object.keys(table[row]).map(Number).sort((a,b)=>a-b);
+    if (p <= keys[0]) return table[row][keys[0]];
+    if (p >= keys[keys.length-1]) return table[row][keys[keys.length-1]];
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (p >= keys[i] && p <= keys[i+1]) {
+            const t = (p - keys[i]) / (keys[i+1] - keys[i]);
+            return table[row][keys[i]] + t * (table[row][keys[i+1]] - table[row][keys[i]]);
+        }
+    }
+    return table[row][keys[keys.length-1]];
+}
+
+// 平均波高 → 设计波高（hm → hp）
+function hmToHp(hm, H, p) {
+    const hm_H = hm / Math.max(H, 0.1);
+    return hm * getHpRatio(p, hm_H);
+}
+
+// 设计波高 → 平均波高（hp → hm），迭代计算（因比值依赖于 hm/H）
+function hpToHm(hp, H, p) {
+    let hm = hp / 2.0; // 初值估计
+    for (let iter = 0; iter < 8; iter++) {
+        const hm_H = hm / Math.max(H, 0.1);
+        const ratio = getHpRatio(p, hm_H);
+        hm = hp / ratio;
+    }
+    return hm;
+}
+
+// ===================== 主要计算函数 =====================
+function calculateAll() {
+    // ------ 读取基本参数 ------
+    const grade = parseInt(document.getElementById('damGrade').value);
+    const region = document.getElementById('regionType').value;
+    const reservoirType = document.getElementById('reservoirType').value;
+    const hasParapet = document.getElementById('hasParapet').value === 'yes';
+    const coreType = document.getElementById('coreType').value;
+    const surfaceType = parseFloat(document.getElementById('surfaceType').value);
+    const m = parseFloat(document.getElementById('slopeM').value);
+
+    const normalWL = parseFloat(document.getElementById('normalWL').value);
+    const designWL = parseFloat(document.getElementById('designWL').value);
+    const checkWL = parseFloat(document.getElementById('checkWL').value);
+
+    const windSpeed = parseFloat(document.getElementById('windSpeed').value);
+    const windHeight = parseFloat(document.getElementById('windHeight').value);
+    const fetchLength = parseFloat(document.getElementById('fetchLength').value);
+    const avgDepth = parseFloat(document.getElementById('avgDepth').value);
+    const damDepth = parseFloat(document.getElementById('damDepth').value);
+    const windAngle = parseFloat(document.getElementById('windAngle').value);
+
+    const hasEq = document.getElementById('hasEarthquake').value === 'yes';
+    const eqSurge = hasEq ? parseFloat(document.getElementById('eqSurge').value) : 0;
+    const eqSettlement = hasEq ? parseFloat(document.getElementById('eqSettlement').value) : 0;
+
+    const coreSettlement = parseFloat(document.getElementById('coreSettlement').value);
+    const damSettlement = parseFloat(document.getElementById('damSettlement').value);
+
+    // ------ 风速修正 ------
+    const Kz = getKz(windHeight);
+    const W10 = Kz * windSpeed;
+
+    // 设计风速: 正常运用
+    let W_normal;
+    if (grade <= 2) {
+        W_normal = W10 * 1.5; // 取1.5倍
+    } else {
+        W_normal = W10 * 1.5;
+    }
+    const W_abnormal = W10; // 非常运用采用多年平均年最大风速
+
+    // ------ 计算波浪要素（正常运用）------
+    const g = 9.81;
+    let hm_normal, Tm_normal, Lm_normal;
+    let waveMethod = '';
+
+    if (reservoirType === 'putian') {
+        // 莆田公式直接计算平均波高 hm
+        waveMethod = '莆田试验站公式（直接计算 hm）';
+        hm_normal = calcPutianHm(W_normal, fetchLength, avgDepth);
+        Tm_normal = calcPutianTm(hm_normal);
+        Lm_normal = calcPutianLm(Tm_normal, damDepth);
+    } else if (reservoirType === 'hehe') {
+        // 鹤地公式直接输出 h₂%（累积频率2%的波高），需换算为平均波高 hm
+        waveMethod = '鹤地水库公式（输出 h₂%，换算为 hm）';
+        const h2p = calcHeheH(W_normal, fetchLength);
+        hm_normal = hpToHm(h2p, damDepth, 2);
+        Tm_normal = calcPutianTm(hm_normal);
+        Lm_normal = calcHeheLm(W_normal, fetchLength);
+    } else {
+        // 官厅简化公式：需判定 gD/W² 范围来确定输出的是 h₅% 还是 h₁₀%
+        const gD_W2_check = 9.81 * fetchLength / (W_normal * W_normal);
+        let hp_freq;
+        if (gD_W2_check >= 20 && gD_W2_check <= 250) {
+            waveMethod = '官厅水库公式（简化）- 输出 h₅%，换算为 hm';
+            hp_freq = 5;
+        } else {
+            waveMethod = '官厅水库公式（简化）- 输出 h₁₀%，换算为 hm';
+            hp_freq = 10;
+        }
+        const hp_val = calcGuantingH(W_normal, fetchLength);
+        hm_normal = hpToHm(hp_val, damDepth, hp_freq);
+        Tm_normal = calcPutianTm(hm_normal);
+        Lm_normal = calcGuantingLm(W_normal, fetchLength);
+    }
+
+    // 设计波高: 1、2、3级坝取h1%, 4、5级坝取h5%
+    const designP = grade <= 3 ? 1 : 5;
+    // 此时 hm_normal 已经是平均波高，直接换算到设计频率
+    let hp_normal = hmToHp(hm_normal, damDepth, designP);
+
+    // 波浪爬高计算 (正常运用)
+    let Rm_normal, Rp_normal;
+    const Kw_normal = getKw(W_normal, damDepth);
+    const Kbeta = getKbeta(windAngle);
+
+    if (m >= 1.5 && m <= 5.0) {
+        Rm_normal = (surfaceType * Kw_normal / Math.sqrt(1 + m * m)) * Math.sqrt(hm_normal * Lm_normal);
+    } else if (m <= 1.25) {
+        // R0 近似取 1.24~2.50 按护面类型, 取中间值
+        let R0 = 1.5;
+        if (surfaceType >= 0.95) R0 = 1.24;
+        else if (surfaceType >= 0.85) R0 = 1.45;
+        else if (surfaceType >= 0.70) R0 = 2.20;
+        else R0 = 2.50;
+        Rm_normal = surfaceType * Kw_normal * R0 * hm_normal;
+    } else {
+        // 内插 1.25 < m < 1.5
+        let R0 = 1.5;
+        if (surfaceType >= 0.95) R0 = 1.24;
+        else if (surfaceType >= 0.85) R0 = 1.45;
+        else if (surfaceType >= 0.70) R0 = 2.20;
+        else R0 = 2.50;
+
+        const m1 = 1.25, m2 = 1.5;
+        const Rm1 = surfaceType * Kw_normal * R0 * hm_normal; // m=1.25
+        const Rm2 = (surfaceType * Kw_normal / Math.sqrt(1 + m2 * m2)) * Math.sqrt(hm_normal * Lm_normal); // m=1.5
+        const t = (m - m1) / (m2 - m1);
+        Rm_normal = Rm1 + t * (Rm2 - Rm1);
+    }
+    Rm_normal *= Kbeta; // 斜向波折减
+
+    // 设计爬高
+    const ratioRpRm = getRpRm(hm_normal, damDepth, designP);
+    Rp_normal = Rm_normal * ratioRpRm;
+
+    // ------ 计算波浪要素（非常运用）------
+    let hm_abnormal, Tm_abnormal, Lm_abnormal;
+    if (reservoirType === 'putian') {
+        hm_abnormal = calcPutianHm(W_abnormal, fetchLength, avgDepth);
+        Tm_abnormal = calcPutianTm(hm_abnormal);
+        Lm_abnormal = calcPutianLm(Tm_abnormal, damDepth);
+    } else if (reservoirType === 'hehe') {
+        const h2p_ab = calcHeheH(W_abnormal, fetchLength);
+        hm_abnormal = hpToHm(h2p_ab, damDepth, 2);
+        Tm_abnormal = calcPutianTm(hm_abnormal);
+        Lm_abnormal = calcHeheLm(W_abnormal, fetchLength);
+    } else {
+        const gD_W2_check_ab = 9.81 * fetchLength / (W_abnormal * W_abnormal);
+        let hp_freq_ab;
+        if (gD_W2_check_ab >= 20 && gD_W2_check_ab <= 250) {
+            hp_freq_ab = 5;
+        } else {
+            hp_freq_ab = 10;
+        }
+        const hp_val_ab = calcGuantingH(W_abnormal, fetchLength);
+        hm_abnormal = hpToHm(hp_val_ab, damDepth, hp_freq_ab);
+        Tm_abnormal = calcPutianTm(hm_abnormal);
+        Lm_abnormal = calcGuantingLm(W_abnormal, fetchLength);
+    }
+
+    let hp_abnormal = hmToHp(hm_abnormal, damDepth, designP);
+
+    const Kw_abnormal = getKw(W_abnormal, damDepth);
+    let Rm_abnormal;
+    if (m >= 1.5 && m <= 5.0) {
+        Rm_abnormal = (surfaceType * Kw_abnormal / Math.sqrt(1 + m * m)) * Math.sqrt(hm_abnormal * Lm_abnormal);
+    } else if (m <= 1.25) {
+        let R0 = 1.5;
+        if (surfaceType >= 0.95) R0 = 1.24;
+        else if (surfaceType >= 0.85) R0 = 1.45;
+        else if (surfaceType >= 0.70) R0 = 2.20;
+        else R0 = 2.50;
+        Rm_abnormal = surfaceType * Kw_abnormal * R0 * hm_abnormal;
+    } else {
+        let R0 = 1.5;
+        if (surfaceType >= 0.95) R0 = 1.24;
+        else if (surfaceType >= 0.85) R0 = 1.45;
+        else if (surfaceType >= 0.70) R0 = 2.20;
+        else R0 = 2.50;
+        const m1 = 1.25, m2 = 1.5;
+        const Rm1 = surfaceType * Kw_abnormal * R0 * hm_abnormal;
+        const Rm2 = (surfaceType * Kw_abnormal / Math.sqrt(1 + m2 * m2)) * Math.sqrt(hm_abnormal * Lm_abnormal);
+        const t = (m - m1) / (m2 - m1);
+        Rm_abnormal = Rm1 + t * (Rm2 - Rm1);
+    }
+    Rm_abnormal *= Kbeta;
+    const ratioRpRm_ab = getRpRm(hm_abnormal, damDepth, designP);
+    Rp_abnormal = Rm_abnormal * ratioRpRm_ab;
+
+    // 校核水位爬高用非常运用波浪
+    const Rp_check = Rp_abnormal;
+
+    // ------ 风壅水面高度计算 ------
+    const K = 3.6e-6;
+    const cosBeta = Math.cos(windAngle * Math.PI / 180);
+    const e_normal = (K * W_normal * W_normal * fetchLength * cosBeta) / (2 * g * avgDepth);
+    const e_abnormal = (K * W_abnormal * W_abnormal * fetchLength * cosBeta) / (2 * g * avgDepth);
+
+    // ------ 安全加高 ------
+    const A_normal = getSafetyAllowance(grade, true, region);
+    const A_abnormal = getSafetyAllowance(grade, false, region);
+
+    // ------ 坝顶超高 ------
+    const Y_normal_normal = Rp_normal + e_normal + A_normal;    // 正常水位+正常运用
+    const Y_design_normal = Rp_normal + e_normal + A_normal;   // 设计洪水位+正常运用
+    const Y_check_abnormal = Rp_check + e_abnormal + A_abnormal; // 校核洪水位+非常运用
+    const Y_normal_abnormal_eq = Rp_abnormal + e_abnormal + A_abnormal + eqSurge + eqSettlement; // 正常+非常+地震
+
+    // ------ 各工况坝顶/墙顶高程 ------
+    const H1 = normalWL + Y_normal_normal;
+    const H2 = designWL + Y_design_normal;
+    const H3 = checkWL + Y_check_abnormal;
+    const H4 = hasEq ? (normalWL + Y_normal_abnormal_eq) : -Infinity;
+
+    const maxElevation = Math.max(H1, H2, H3, H4);
+
+    // ------ 有/无防浪墙 ------
+    const parapetHeight = parseFloat(document.getElementById('parapetHeight').value);
+    let damCrestElevation, parapetElevation;
+    
+    if (hasParapet) {
+        // 墙顶高程 = 四种工况最大值
+        parapetElevation = maxElevation;
+        // 坝顶高程 = 墙顶高程 - 防浪墙高度
+        damCrestElevation = parapetElevation - parapetHeight;
+    } else {
+        parapetElevation = null;
+        damCrestElevation = maxElevation;
+    }
+    
+    // ------ 复核与自动调整 ------
+    let adjustedNormal = false;
+    let adjustedAbnormal = false;
+    let adjustedNormalMsg = '';
+    let adjustedAbnormalMsg = '';
+    
+    // 正常运用复核：坝顶应高出静水位 0.5m
+    if (damCrestElevation <= normalWL + 0.5 || damCrestElevation <= designWL + 0.5) {
+        const requiredNormal = Math.max(normalWL + 0.5, designWL + 0.5);
+        adjustedNormalMsg = '坝顶高程 ' + damCrestElevation.toFixed(3) + 'm < 静水位+0.5=' + requiredNormal.toFixed(3) + 'm，已自动调整';
+        damCrestElevation = requiredNormal;
+        adjustedNormal = true;
+        if (hasParapet) {
+            parapetElevation = damCrestElevation + parapetHeight;
+        }
+    }
+    
+    // 非常运用复核：坝顶应不低于校核水位
+    if (damCrestElevation < checkWL) {
+        adjustedAbnormalMsg = '坝顶高程 ' + damCrestElevation.toFixed(3) + 'm < 校核水位=' + checkWL.toFixed(3) + 'm，已自动调整';
+        damCrestElevation = checkWL;
+        adjustedAbnormal = true;
+        if (hasParapet) {
+            parapetElevation = damCrestElevation + parapetHeight;
+        }
+    }
+    
+    const checkPass1 = !adjustedNormal;
+    const checkPass2 = !adjustedAbnormal;
+
+    const finalDamCrest = damCrestElevation + damSettlement; // 竣工坝顶高程（含沉降超高）
+
+    // ------ 防渗体顶部高程计算 ------
+    let coreDeltaH_min, coreDeltaH_max;
+    if (coreType === 'inclined') {
+        coreDeltaH_min = 0.6; coreDeltaH_max = 0.8;
+    } else {
+        coreDeltaH_min = 0.3; coreDeltaH_max = 0.6;
+    }
+    const coreDeltaH = (coreDeltaH_min + coreDeltaH_max) / 2; // 取中间值
+    
+    const coreH1 = normalWL + coreDeltaH;
+    const coreH2 = designWL + coreDeltaH;
+    const coreHmax = Math.max(coreH1, coreH2);
+    
+    // 非常复核
+    let coreFinal;
+    let coreCheckPass;
+    if (hasParapet) {
+        // 有防浪墙时，防渗体顶高程只需大于正常蓄水位+防渗体沉降超高
+        coreFinal = normalWL + coreSettlement;
+        coreCheckPass = true;
+    } else if (coreHmax >= checkWL + Rp_check) {
+        coreFinal = coreHmax + coreSettlement;
+        coreCheckPass = true;
+    } else {
+        coreFinal = checkWL + Rp_check + coreSettlement;
+        coreCheckPass = false;
+    }
+    
+    // 有防浪墙时的防渗体特殊处理
+    let coreWithParapet = null;
+    if (hasParapet) {
+        coreWithParapet = normalWL + coreSettlement;
+    }
+
+    // ===================== 存储计算结果（供Word导出） =====================
+    lastCalcResult = {
+        grade, region, reservoirType, hasParapet, coreType,
+        surfaceType, m, parapetHeight,
+        normalWL, designWL, checkWL,
+        windSpeed, windHeight, fetchLength, avgDepth, damDepth, windAngle,
+        hasEq, eqSurge, eqSettlement, coreSettlement, damSettlement,
+        Kz, W10, W_normal, W_abnormal,
+        waveMethod,
+        hm_normal, Tm_normal, Lm_normal, hp_normal,
+        Kw_normal, Kbeta, Rm_normal, Rp_normal, ratioRpRm,
+        hm_abnormal, Tm_abnormal, Lm_abnormal, hp_abnormal,
+        Kw_abnormal, Rm_abnormal, Rp_abnormal, ratioRpRm_ab,
+        Rp_check,
+        e_normal, e_abnormal,
+        A_normal, A_abnormal,
+        Y_normal_normal, Y_design_normal, Y_check_abnormal, Y_normal_abnormal_eq,
+        H1, H2, H3, H4,
+        maxElevation,
+        damCrestElevation, parapetElevation,
+        adjustedNormal, adjustedAbnormal, adjustedNormalMsg, adjustedAbnormalMsg,
+        checkPass1, checkPass2,
+        finalDamCrest,
+        coreDeltaH_min, coreDeltaH_max, coreDeltaH,
+        coreH1, coreH2, coreHmax,
+        coreFinal, coreCheckPass, coreWithParapet,
+        designP, g
+    };
+
+    // ===================== 显示波浪计算详情 =====================
+    let formulaNote_normal = '';
+    if (reservoirType === 'hehe') {
+        const h2p_display = calcHeheH(W_normal, fetchLength);
+        formulaNote_normal = '&nbsp;&nbsp;※ 鹤地公式原始输出 h\u2082% = ' + h2p_display.toFixed(4) + ' m，频率换算\u2192 hm<br>';
+    } else if (reservoirType === 'guanting') {
+        const hp_display = calcGuantingH(W_normal, fetchLength);
+        const gD_chk = 9.81 * fetchLength / (W_normal * W_normal);
+        const freq_display = (gD_chk >= 20 && gD_chk <= 250) ? 5 : 10;
+        formulaNote_normal = '&nbsp;&nbsp;※ 官厅公式原始输出 h' + freq_display + '% = ' + hp_display.toFixed(4) + ' m（gD/W\u00b2=' + gD_chk.toFixed(1) + '），频率换算\u2192 hm<br>';
+    } else {
+        formulaNote_normal = '&nbsp;&nbsp;※ 莆田公式直接计算平均波高 hm，无需换算<br>';
+    }
+    let waveHtml = `
+        <div class="wave-formula-box">
+            <b>波浪计算方法：</b>${waveMethod}<br><br>
+            <b>① 风速修正：</b><br>
+            &nbsp;&nbsp;风速仪高度 Z = ${windHeight}m，K<sub>Z</sub> = ${Kz.toFixed(3)}<br>
+            &nbsp;&nbsp;W<sub>10</sub> = K<sub>Z</sub> × W<sub>Z</sub> = ${Kz.toFixed(3)} × ${windSpeed} = ${W10.toFixed(2)} m/s<br><br>
+            <b>② 设计风速：</b><br>
+            &nbsp;&nbsp;正常运用 W<sub>正</sub> = ${W_normal.toFixed(2)} m/s（${grade<=2?'1.5倍':'1.5倍'}多年平均年最大风速）<br>
+            &nbsp;&nbsp;非常运用 W<sub>非</sub> = ${W_abnormal.toFixed(2)} m/s（多年平均年最大风速）<br><br>
+            <b>③ 波浪要素（正常运用）：</b><br>
+            ${formulaNote_normal}
+            &nbsp;&nbsp;平均波高 h<sub>m</sub> = ${hm_normal.toFixed(4)} m<br>
+            &nbsp;&nbsp;平均波周期 T<sub>m</sub> = ${Tm_normal.toFixed(3)} s<br>
+            &nbsp;&nbsp;平均波长 L<sub>m</sub> = ${Lm_normal.toFixed(3)} m<br>
+            &nbsp;&nbsp;设计波高 h<sub>${designP}%</sub> = ${hp_normal.toFixed(4)} m<br>
+            &nbsp;&nbsp;经验系数 K<sub>W</sub> = ${Kw_normal.toFixed(3)}<br><br>
+            <b>④ 波浪要素（非常运用）：</b><br>
+            &nbsp;&nbsp;平均波高 h<sub>m</sub> = ${hm_abnormal.toFixed(4)} m<br>
+            &nbsp;&nbsp;平均波周期 T<sub>m</sub> = ${Tm_abnormal.toFixed(3)} s<br>
+            &nbsp;&nbsp;平均波长 L<sub>m</sub> = ${Lm_abnormal.toFixed(3)} m<br>
+            &nbsp;&nbsp;设计波高 h<sub>${designP}%</sub> = ${hp_abnormal.toFixed(4)} m<br>
+            &nbsp;&nbsp;经验系数 K<sub>W</sub> = ${Kw_abnormal.toFixed(3)}<br><br>
+            <b>⑤ 波浪爬高计算：</b><br>
+            &nbsp;&nbsp;坡率 m = ${m}，K<sub>Δ</sub> = ${surfaceType.toFixed(2)}，K<sub>β</sub> = ${Kbeta.toFixed(3)}<br>
+            &nbsp;&nbsp;正常运用：平均爬高 R<sub>m</sub> = ${Rm_normal.toFixed(4)} m，设计爬高 R<sub>${designP}%</sub> = ${Rp_normal.toFixed(4)} m<br>
+            &nbsp;&nbsp;非常运用：平均爬高 R<sub>m</sub> = ${Rm_abnormal.toFixed(4)} m，设计爬高 R<sub>${designP}%</sub> = ${Rp_abnormal.toFixed(4)} m<br>
+            &nbsp;&nbsp;校核水位爬高 R<sub>校</sub> = ${Rp_check.toFixed(4)} m<br><br>
+            <b>⑥ 风壅水面高度：</b><br>
+            &nbsp;&nbsp;正常运用 e<sub>正</sub> = ${e_normal.toFixed(4)} m<br>
+            &nbsp;&nbsp;非常运用 e<sub>非</sub> = ${e_abnormal.toFixed(4)} m<br><br>
+            <b>⑦ 安全加高（表5.3.1）：</b><br>
+            &nbsp;&nbsp;${grade}级坝，${region==='mountain'?'山区、丘陵区':'平原、滨海区'}<br>
+            &nbsp;&nbsp;正常运用 A<sub>正</sub> = ${A_normal.toFixed(2)} m<br>
+            &nbsp;&nbsp;非常运用 A<sub>非</sub> = ${A_abnormal.toFixed(2)} m
+        </div>
+    `;
+    document.getElementById('waveCalcDetail').innerHTML = waveHtml;
+
+    // ===================== 显示各工况详细计算 =====================
+    // 判断复核是否成为控制因素
+    const checkControlled = adjustedNormal || adjustedAbnormal;
+    let detailHtml = `
+        <table class="result-table">
+            <tr>
+                <th>工况</th>
+                <th>静水位（m）</th>
+                <th>波浪爬高 R（m）</th>
+                <th>风壅高度 e（m）</th>
+                <th>安全加高 A（m）</th>
+                <th>地震涌浪高（m）</th>
+                <th>地震沉降（m）</th>
+                <th>坝顶高程（m）</th>
+            </tr>
+            <tr ${maxElevation === H1 ? 'style="background:#c8e6c9;font-weight:700;"' : ''}>
+                <td>① 正常蓄水位+正常运用${maxElevation === H1 ? ' ← 控制工况' : ''}</td>
+                <td>${normalWL.toFixed(2)}</td>
+                <td>${Rp_normal.toFixed(3)}</td>
+                <td>${e_normal.toFixed(3)}</td>
+                <td>${A_normal.toFixed(2)}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>${H1.toFixed(3)}</td>
+            </tr>
+            <tr ${maxElevation === H2 ? 'style="background:#c8e6c9;font-weight:700;"' : ''}>
+                <td>② 设计洪水位+正常运用${maxElevation === H2 ? ' ← 控制工况' : ''}</td>
+                <td>${designWL.toFixed(2)}</td>
+                <td>${Rp_normal.toFixed(3)}</td>
+                <td>${e_normal.toFixed(3)}</td>
+                <td>${A_normal.toFixed(2)}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>${H2.toFixed(3)}</td>
+            </tr>
+            <tr ${maxElevation === H3 ? 'style="background:#c8e6c9;font-weight:700;"' : ''}>
+                <td>③ 校核洪水位+非常运用${maxElevation === H3 ? ' ← 控制工况' : ''}</td>
+                <td>${checkWL.toFixed(2)}</td>
+                <td>${Rp_check.toFixed(3)}</td>
+                <td>${e_abnormal.toFixed(3)}</td>
+                <td>${A_abnormal.toFixed(2)}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>${H3.toFixed(3)}</td>
+            </tr>
+            <tr ${maxElevation === H4 ? 'style="background:#c8e6c9;font-weight:700;"' : ''}>
+                <td>④ 正常蓄水位+非常运用+地震${maxElevation === H4 ? ' ← 控制工况' : ''}</td>
+                <td>${normalWL.toFixed(2)}</td>
+                <td>${Rp_abnormal.toFixed(3)}</td>
+                <td>${e_abnormal.toFixed(3)}</td>
+                <td>${A_abnormal.toFixed(2)}</td>
+                <td>${hasEq ? eqSurge.toFixed(2) : '—'}</td>
+                <td>${hasEq ? eqSettlement.toFixed(2) : '—'}</td>
+                <td>${H4 > -1e9 ? H4.toFixed(3) : '不适用'}</td>
+            </tr>
+            ${checkControlled ? '<tr style="background:#c8e6c9;font-weight:700;"><td colspan="8">⚠ 复核条件控制：' + (adjustedNormal ? adjustedNormalMsg + '；' : '') + (adjustedAbnormal ? adjustedAbnormalMsg : '') + '</td></tr>' : ''}
+            <tr style="background:#fff3e0;font-weight:700;">
+                <td colspan="7" style="text-align:right;">${hasParapet ? '防浪墙墙顶高程（取最大值）' : '坝顶高程（取大值后）'}</td>
+                <td><span class="highlight-val">${(hasParapet ? parapetElevation : damCrestElevation).toFixed(3)} m</span></td>
+            </tr>
+        </table>
+    `;
+    document.getElementById('resultDetail').innerHTML = detailHtml;
+
+    // ===================== 显示结果汇总 =====================
+    let resultHtml = `
+        <div class="result-area">
+            <h3>✅ 最终结果</h3>
+            <table class="result-table">
+                <tr>
+                    <th style="width:50%;">项目</th>
+                    <th style="width:50%;">数值</th>
+                </tr>
+                <tr>
+                    <td><b>${hasParapet ? '防浪墙墙顶高程' : '坝顶高程（设计）'}</b></td>
+                    <td><span class="highlight-val">${(hasParapet ? parapetElevation : damCrestElevation).toFixed(3)} m</span></td>
+                </tr>
+                ${hasParapet ? `
+                <tr>
+                    <td><b>坝顶高程（设计）</b></td>
+                    <td><span class="highlight-val">${damCrestElevation.toFixed(3)} m</span></td>
+                </tr>` : ''}
+                <tr>
+                    <td><b>控制工况</b></td>
+                    <td>${maxElevation === H1 ? '正常蓄水位+正常运用' : 
+                         maxElevation === H2 ? '设计洪水位+正常运用' :
+                         maxElevation === H3 ? '校核洪水位+非常运用' : '正常蓄水位+非常运用+地震'}</td>
+                </tr>
+                <tr>
+                    <td><b>复核（正常运用）坝顶>静水位+0.5</b></td>
+                    <td class="${checkPass1 ? 'pass' : 'fail'}">${checkPass1 ? '\u2713 满足' : '\u2717 不满足'}${adjustedNormal ? '\uff08已自动调高\uff09' : ''}</td>
+                </tr>
+                ${adjustedNormal ? '<tr><td colspan="2" style="color:#d32f2f;font-size:13px;text-align:left;">\u26a0 ' + adjustedNormalMsg + '</td></tr>' : ''}
+                <tr>
+                    <td><b>复核（非常运用）坝顶\u2265校核水位</b></td>
+                    <td class="${checkPass2 ? 'pass' : 'fail'}">${checkPass2 ? '\u2713 满足' : '\u2717 不满足'}${adjustedAbnormal ? '\uff08已自动调高\uff09' : ''}</td>
+                </tr>
+                ${adjustedAbnormal ? '<tr><td colspan="2" style="color:#d32f2f;font-size:13px;text-align:left;">\u26a0 ' + adjustedAbnormalMsg + '</td></tr>' : ''}
+                <tr>
+                    <td><b>预留沉降超高</b></td>
+                    <td>${damSettlement.toFixed(2)} m</td>
+                </tr>
+                <tr>
+                    <td><b>竣工坝顶高程（含沉降预留）</b></td>
+                    <td><span class="highlight-val">${finalDamCrest.toFixed(3)} m</span></td>
+                </tr>
+            </table>
+        </div>
+    `;
+    document.getElementById('resultSummary').innerHTML = resultHtml;
+
+    // ===================== 显示防渗体顶部高程 =====================
+    let coreHtml = `
+        <table class="result-table">
+            <tr>
+                <th style="width:40%;">计算项目</th>
+                <th style="width:60%;">数值</th>
+            </tr>
+            <tr>
+                <td>防渗体类型</td>
+                <td>${coreType === 'inclined' ? '斜墙' : '心墙'}</td>
+            </tr>
+            <tr>
+                <td>正常运用水位以上超高 Δh</td>
+                <td>${coreDeltaH_min.toFixed(1)}~${coreDeltaH_max.toFixed(1)} m，取中间值 ${coreDeltaH.toFixed(2)} m</td>
+            </tr>
+            <tr>
+                <td>正常蓄水位+超高</td>
+                <td>${coreH1.toFixed(3)} m</td>
+            </tr>
+            <tr>
+                <td>设计洪水位+超高</td>
+                <td>${coreH2.toFixed(3)} m</td>
+            </tr>
+            <tr style="font-weight:700;">
+                <td>正常工况取大值 ∇<sub>max</sub></td>
+                <td>${coreHmax.toFixed(3)} m</td>
+            </tr>
+            <tr>
+                <td>非常复核</td>
+                <td class="${coreCheckPass ? 'pass' : 'fail'}">
+                    ${hasParapet ? '\u2713 有防浪墙，防渗体顶高程按正常蓄水位+沉降超高控制'
+                        : (coreCheckPass ? '\u2713 满足（' + coreHmax.toFixed(3) + ' \u2265 ' + (checkWL + Rp_check).toFixed(3) + '）'
+                                       : '\u2717 不满足，由校核水位+波浪爬高控制')}
+                </td>
+            </tr>
+                <td><span class="highlight-val">${coreFinal.toFixed(3)} m</span>${hasParapet ? '（正常蓄水位+' + coreSettlement.toFixed(2) + '）' : ''}</td>
+    `;
+    document.getElementById('coreResult').innerHTML = coreHtml;
+
+    // 显示Word导出按钮
+    document.getElementById('wordExportBtn').style.display = '';
+
+    // 切换到结果选项卡
+    switchTab('result');
+}
+
+// ===================== TXT 输入数据映射表 =====================
+function getInputFieldMap() {
+    return [
+        { id: 'damGrade',        label: '坝的级别',              type: 'select' },
+        { id: 'regionType',      label: '坝址所属区域（非常运用）', type: 'select' },
+        { id: 'reservoirType',   label: '水库类型（波浪公式）',   type: 'select' },
+        { id: 'hasParapet',      label: '是否设置防浪墙',        type: 'select' },
+        { id: 'parapetHeight',   label: '防浪墙高度（m）',       type: 'number' },
+        { id: 'coreType',        label: '防渗体类型',            type: 'select' },
+        { id: 'surfaceType',     label: '护面糙率渗透性系数 KΔ', type: 'number' },
+        { id: 'slopeM',          label: '坝坡坡度系数 m',        type: 'number' },
+        { id: 'normalWL',        label: '正常蓄水位（m）',       type: 'number' },
+        { id: 'designWL',        label: '设计洪水位（m）',       type: 'number' },
+        { id: 'checkWL',         label: '校核洪水位（m）',       type: 'number' },
+        { id: 'windSpeed',       label: '多年平均年最大风速 W（m/s）', type: 'number' },
+        { id: 'windHeight',      label: '风速测站高度 Z（m）',   type: 'number' },
+        { id: 'fetchLength',     label: '风区长度 D（m）',       type: 'number' },
+        { id: 'avgDepth',        label: '水域平均水深 Hm（m）',  type: 'number' },
+        { id: 'damDepth',        label: '坝前水深 H（m）',       type: 'number' },
+        { id: 'windAngle',       label: '风向夹角 β（°）',      type: 'number' },
+        { id: 'hasEarthquake',   label: '是否考虑地震工况',      type: 'select' },
+        { id: 'eqIntensity',     label: '地震设计烈度',          type: 'select' },
+        { id: 'eqSurge',         label: '地震涌浪高度（m）',     type: 'number' },
+        { id: 'eqSettlement',    label: '地震沉陷（m）',         type: 'number' },
+        { id: 'coreSettlement',  label: '防渗体沉降超高 Δhc（m）', type: 'number' },
+        { id: 'damSettlement',   label: '坝顶预留沉降超高（m）', type: 'number' }
+    ];
+}
+
+// ===================== TXT 保存输入数据 =====================
+function saveInputToTxt() {
+    var map = getInputFieldMap();
+    var lines = [];
+    for (var i = 0; i < map.length; i++) {
+        var el = document.getElementById(map[i].id);
+        var val = el ? el.value : '';
+        lines.push(map[i].label + '=' + val);
+    }
+
+    var content = lines.join('\n');
+    var blob = new Blob(['\uFEFF' + content], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '土石坝坝顶高程计算_输入参数.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ===================== TXT 载入输入数据 =====================
+function loadInputFromTxt(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var content = e.target.result;
+            var lines = content.split(/\r?\n/);
+            var map = getInputFieldMap();
+            var valueMap = {};
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                // 去除BOM
+                if (line.charCodeAt(0) === 0xFEFF) line = line.substring(1);
+                var eqIdx = line.indexOf('=');
+                if (eqIdx <= 0) continue;
+                var label = line.substring(0, eqIdx).trim();
+                var val = line.substring(eqIdx + 1).trim();
+                if (label && val) valueMap[label] = val;
+            }
+
+            var loadedCount = 0;
+            for (var j = 0; j < map.length; j++) {
+                if (valueMap[map[j].label] !== undefined) {
+                    var el = document.getElementById(map[j].id);
+                    if (el) {
+                        el.value = valueMap[map[j].label];
+                        loadedCount++;
+                    }
+                }
+            }
+
+            // 刷新条件显示
+            toggleParapet();
+            toggleEarthquake();
+
+            alert('成功载入 ' + loadedCount + ' 个参数！');
+        } catch (err) {
+            alert('载入失败：文件格式不正确。请使用本程序导出的TXT文件。\n错误：' + err.message);
+        }
+    };
+    reader.readAsText(file, 'utf-8');
+    event.target.value = '';
+}
+
+// ===================== Word 导出计算书 =====================
+function exportToWord() {
+    if (!lastCalcResult) {
+        alert('请先点击「开始计算」完成计算后再导出Word。');
+        return;
+    }
+    _ensureDOCX(function() {
+        _doExportToWord();
+    });
+}
+
+function _doExportToWord() {
+    var R = lastCalcResult;
+
+    var docx = window.docx;
+    var doc = new docx.Document({
+        sections: [{
+            properties: {
+                page: { margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } }
+            },
+            children: buildWordContent(R)
+        }]
+    });
+
+    docx.Packer.toBlob(doc).then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = '土石坝坝顶高程计算书.docx';
+        a.click();
+        URL.revokeObjectURL(url);
+    }).catch(function(err) {
+        alert('导出失败：' + err.message);
+    });
+}
+
+function buildWordContent(R) {
+    var docx = window.docx;
+    var children = [];
+
+    // 标题
+    children.push(new docx.Paragraph({
+        text: '土石坝坝顶高程计算书',
+        heading: docx.HeadingLevel.TITLE,
+        alignment: docx.AlignmentType.CENTER,
+        spacing: { after: 100 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '依据《碾压式土石坝设计规范》SL274-2020',
+        alignment: docx.AlignmentType.CENTER,
+        spacing: { after: 300 },
+        style: 'Normal'
+    }));
+
+    // === 一、输入参数 ===
+    children.push(new docx.Paragraph({
+        text: '一、输入参数',
+        heading: docx.HeadingLevel.HEADING_1,
+        spacing: { before: 200, after: 100 }
+    }));
+
+    children.push(new docx.Paragraph({
+        text: '1.1 工程基本信息',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(createWordTable(docx, [
+        ['参数名称', '参数值'],
+        ['坝的级别', R.grade + ' 级'],
+        ['坝址所属区域（非常运用）', R.region === 'mountain' ? '山区、丘陵区' : '平原、滨海区'],
+        ['水库类型（波浪公式）', R.reservoirType === 'putian' ? '平原、滨海地区（莆田试验站公式）' : (R.reservoirType === 'hehe' ? '丘陵平原地区（鹤地水库公式）' : '内陆峡谷地区（官厅水库公式）')],
+        ['是否设置防浪墙', R.hasParapet ? '有防浪墙' : '无防浪墙'],
+        ['防浪墙高度', R.hasParapet ? R.parapetHeight.toFixed(2) + ' m' : '—'],
+        ['防渗体类型', R.coreType === 'inclined' ? '斜墙' : '心墙'],
+        ['护面糙率渗透性系数 KΔ', R.surfaceType.toFixed(2)],
+        ['坝坡坡度系数 m', R.m.toFixed(1)]
+    ]));
+
+    children.push(new docx.Paragraph({
+        text: '1.2 特征水位',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { before: 100, after: 60 }
+    }));
+    children.push(createWordTable(docx, [
+        ['参数名称', '参数值'],
+        ['正常蓄水位', R.normalWL.toFixed(2) + ' m'],
+        ['设计洪水位', R.designWL.toFixed(2) + ' m'],
+        ['校核洪水位', R.checkWL.toFixed(2) + ' m']
+    ]));
+
+    children.push(new docx.Paragraph({
+        text: '1.3 风速与风区参数',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { before: 100, after: 60 }
+    }));
+    children.push(createWordTable(docx, [
+        ['参数名称', '参数值'],
+        ['多年平均年最大风速 W', R.windSpeed.toFixed(1) + ' m/s'],
+        ['风速测站高度 Z', R.windHeight + ' m'],
+        ['风区长度 D', R.fetchLength.toFixed(0) + ' m'],
+        ['水域平均水深 Hm', R.avgDepth.toFixed(1) + ' m'],
+        ['坝前水深 H', R.damDepth.toFixed(1) + ' m'],
+        ['风向夹角 β', R.windAngle.toFixed(0) + '°']
+    ]));
+
+    children.push(new docx.Paragraph({
+        text: '1.4 地震及沉降参数',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { before: 100, after: 60 }
+    }));
+    children.push(createWordTable(docx, [
+        ['参数名称', '参数值'],
+        ['是否考虑地震', R.hasEq ? '考虑' : '不考虑'],
+        ['地震涌浪高度', R.hasEq ? R.eqSurge.toFixed(2) + ' m' : '—'],
+        ['地震沉陷', R.hasEq ? R.eqSettlement.toFixed(2) + ' m' : '—'],
+        ['防渗体沉降超高 Δhc', R.coreSettlement.toFixed(2) + ' m'],
+        ['坝顶预留沉降超高', R.damSettlement.toFixed(2) + ' m']
+    ]));
+
+    // === 二、计算过程 ===
+    children.push(new docx.Paragraph({
+        text: '二、计算过程',
+        heading: docx.HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 100 }
+    }));
+
+    // 2.1 风速修正
+    children.push(new docx.Paragraph({
+        text: '2.1 风速高度修正（规范 A.1.1）',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '公式：W₁₀ = Kz × Wz',
+        spacing: { after: 40 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '风速仪高度 Z = ' + R.windHeight + ' m，查表得高度修正系数 Kz = ' + R.Kz.toFixed(3),
+        spacing: { after: 40 }
+    }));
+    children.push(new docx.Paragraph({
+        text: 'W₁₀ = ' + R.Kz.toFixed(3) + ' × ' + R.windSpeed + ' = ' + R.W10.toFixed(2) + ' m/s',
+        spacing: { after: 60 }
+    }));
+
+    // 2.2 设计风速
+    children.push(new docx.Paragraph({
+        text: '2.2 设计风速取值（规范 5.3.6）',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常运用（' + (R.grade <= 2 ? '1、2级坝取1.5倍' : '3~5级坝取1.5倍') + '多年平均年最大风速）：',
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  W正 = 1.5 × ' + R.W10.toFixed(2) + ' = ' + R.W_normal.toFixed(2) + ' m/s',
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '非常运用（取多年平均年最大风速）：',
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  W非 = W₁₀ = ' + R.W_abnormal.toFixed(2) + ' m/s',
+        spacing: { after: 60 }
+    }));
+
+    // 2.3 波浪要素
+    children.push(new docx.Paragraph({
+        text: '2.3 波浪要素计算 — ' + R.waveMethod,
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '（1）正常运用工况：',
+        spacing: { after: 20 },
+        bold: true
+    }));
+    children.push(new docx.Paragraph({
+        text: '  平均波高 hm = ' + R.hm_normal.toFixed(4) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  平均波周期 Tm = 4.438 × √hm = 4.438 × √' + R.hm_normal.toFixed(4) + ' = ' + R.Tm_normal.toFixed(3) + ' s',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  平均波长 Lm = ' + R.Lm_normal.toFixed(3) + ' m（经浅水波迭代修正）',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  设计波高（' + R.designP + '%累积频率）hp = ' + R.hp_normal.toFixed(4) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  经验系数 Kw = ' + R.Kw_normal.toFixed(3) + '（W/√(gH) = ' + (R.W_normal / Math.sqrt(R.g * R.damDepth)).toFixed(2) + '）',
+        spacing: { after: 30 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '（2）非常运用工况：',
+        spacing: { after: 20 },
+        bold: true
+    }));
+    children.push(new docx.Paragraph({
+        text: '  平均波高 hm = ' + R.hm_abnormal.toFixed(4) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  平均波周期 Tm = ' + R.Tm_abnormal.toFixed(3) + ' s',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  平均波长 Lm = ' + R.Lm_abnormal.toFixed(3) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  设计波高（' + R.designP + '%累积频率）hp = ' + R.hp_abnormal.toFixed(4) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '  经验系数 Kw = ' + R.Kw_abnormal.toFixed(3),
+        spacing: { after: 60 }
+    }));
+
+    // 2.4 波浪爬高
+    children.push(new docx.Paragraph({
+        text: '2.4 波浪爬高计算（规范 A.1.12 ~ A.1.15）',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    if (R.m >= 1.5) {
+        children.push(new docx.Paragraph({
+            text: '爬高公式（m=1.5~5.0）：Rm = (KΔ × Kw / √(1+m²)) × √(hm × Lm)',
+            spacing: { after: 20 }
+        }));
+        children.push(new docx.Paragraph({
+            text: '正常运用：Rm = (' + R.surfaceType.toFixed(2) + ' × ' + R.Kw_normal.toFixed(3) + ' / √(1+' + R.m.toFixed(1) + '²)) × √(' + R.hm_normal.toFixed(4) + ' × ' + R.Lm_normal.toFixed(3) + ') = ' + R.Rm_normal.toFixed(4) + ' m',
+            spacing: { after: 10 }
+        }));
+        children.push(new docx.Paragraph({
+            text: '非常运用：Rm = (' + R.surfaceType.toFixed(2) + ' × ' + R.Kw_abnormal.toFixed(3) + ' / √(1+' + R.m.toFixed(1) + '²)) × √(' + R.hm_abnormal.toFixed(4) + ' × ' + R.Lm_abnormal.toFixed(3) + ') = ' + R.Rm_abnormal.toFixed(4) + ' m',
+            spacing: { after: 20 }
+        }));
+    } else {
+        children.push(new docx.Paragraph({
+            text: '爬高公式（m≤1.25）：Rm = KΔ × Kw × R₀ × hm',
+            spacing: { after: 20 }
+        }));
+        children.push(new docx.Paragraph({
+            text: '正常运用：Rm = ' + R.surfaceType.toFixed(2) + ' × ' + R.Kw_normal.toFixed(3) + ' × R₀ × ' + R.hm_normal.toFixed(4) + ' = ' + R.Rm_normal.toFixed(4) + ' m',
+            spacing: { after: 10 }
+        }));
+        children.push(new docx.Paragraph({
+            text: '非常运用：Rm = ' + R.surfaceType.toFixed(2) + ' × ' + R.Kw_abnormal.toFixed(3) + ' × R₀ × ' + R.hm_abnormal.toFixed(4) + ' = ' + R.Rm_abnormal.toFixed(4) + ' m',
+            spacing: { after: 20 }
+        }));
+    }
+    children.push(new docx.Paragraph({
+        text: '斜向波折减系数 Kβ = ' + R.Kbeta.toFixed(3) + '（β=' + R.windAngle.toFixed(0) + '°）',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '爬高频率换算系数 Rp/Rm = ' + R.ratioRpRm.toFixed(3) + '（hm/H=' + (R.hm_normal / R.damDepth).toFixed(3) + ', P=' + R.designP + '%）',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常运用设计爬高 R' + R.designP + '% = ' + R.Rm_normal.toFixed(4) + ' × ' + R.ratioRpRm.toFixed(3) + ' × ' + R.Kbeta.toFixed(3) + ' = ' + R.Rp_normal.toFixed(4) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '非常运用设计爬高 R' + R.designP + '% = ' + R.Rm_abnormal.toFixed(4) + ' × ' + R.ratioRpRm_ab.toFixed(3) + ' × ' + R.Kbeta.toFixed(3) + ' = ' + R.Rp_abnormal.toFixed(4) + ' m',
+        spacing: { after: 60 }
+    }));
+
+    // 2.5 风壅水面高度
+    children.push(new docx.Paragraph({
+        text: '2.5 风壅水面高度（规范 A.1.10）',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '公式：e = K × W² × D × cosβ / (2g × Hm)',
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '其中：K = 3.6×10⁻⁶，g = 9.81 m/s²',
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常运用：e正 = 3.6×10⁻⁶ × ' + R.W_normal.toFixed(2) + '² × ' + R.fetchLength.toFixed(0) + ' × cos(' + R.windAngle.toFixed(0) + '°) / (2 × 9.81 × ' + R.avgDepth.toFixed(1) + ') = ' + R.e_normal.toFixed(4) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '非常运用：e非 = 3.6×10⁻⁶ × ' + R.W_abnormal.toFixed(2) + '² × ' + R.fetchLength.toFixed(0) + ' × cos(' + R.windAngle.toFixed(0) + '°) / (2 × 9.81 × ' + R.avgDepth.toFixed(1) + ') = ' + R.e_abnormal.toFixed(4) + ' m',
+        spacing: { after: 60 }
+    }));
+
+    // 2.6 安全加高
+    children.push(new docx.Paragraph({
+        text: '2.6 安全加高（规范 表5.3.1）',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: R.grade + '级坝，区域类型：' + (R.region === 'mountain' ? '山区、丘陵区' : '平原、滨海区'),
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常运用安全加高 A正 = ' + R.A_normal.toFixed(2) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '非常运用安全加高 A非 = ' + R.A_abnormal.toFixed(2) + ' m',
+        spacing: { after: 60 }
+    }));
+
+    // 2.7 坝顶超高
+    children.push(new docx.Paragraph({
+        text: '2.7 坝顶超高计算（规范 5.3.1）',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '公式：Y = R + e + A',
+        spacing: { after: 20 }
+    }));
+    children.push(createWordTable(docx, [
+        ['计算项', 'R (m)', 'e (m)', 'A (m)', '地震涌浪 (m)', '地震沉陷 (m)', 'Y (m)'],
+        ['正常运用', R.Rp_normal.toFixed(4), R.e_normal.toFixed(4), R.A_normal.toFixed(2), '—', '—', R.Y_normal_normal.toFixed(4)],
+        ['非常运用', R.Rp_abnormal.toFixed(4), R.e_abnormal.toFixed(4), R.A_abnormal.toFixed(2), '—', '—', R.Y_check_abnormal.toFixed(4)],
+        ['正常+非常+地震', R.Rp_abnormal.toFixed(4), R.e_abnormal.toFixed(4), R.A_abnormal.toFixed(2), R.hasEq ? R.eqSurge.toFixed(2) : '—', R.hasEq ? R.eqSettlement.toFixed(2) : '—', R.Y_normal_abnormal_eq.toFixed(4)]
+    ]));
+
+    // 2.8 各工况高程
+    children.push(new docx.Paragraph({
+        text: '2.8 各工况坝顶高程',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { before: 100, after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '公式：∇坝顶 = ∇静水位 + Y',
+        spacing: { after: 20 }
+    }));
+    var controlCase = R.maxElevation === R.H1 ? '① 正常蓄水位+正常运用' :
+                      R.maxElevation === R.H2 ? '② 设计洪水位+正常运用' :
+                      R.maxElevation === R.H3 ? '③ 校核洪水位+非常运用' : '④ 正常蓄水位+非常运用+地震';
+    children.push(createWordTable(docx, [
+        ['工况', '静水位 (m)', '超高 Y (m)', '坝顶高程 (m)', '是否控制'],
+        ['① 正常蓄水位+正常运用', R.normalWL.toFixed(2), R.Y_normal_normal.toFixed(4), R.H1.toFixed(3), R.maxElevation === R.H1 ? '★ 控制工况' : ''],
+        ['② 设计洪水位+正常运用', R.designWL.toFixed(2), R.Y_design_normal.toFixed(4), R.H2.toFixed(3), R.maxElevation === R.H2 ? '★ 控制工况' : ''],
+        ['③ 校核洪水位+非常运用', R.checkWL.toFixed(2), R.Y_check_abnormal.toFixed(4), R.H3.toFixed(3), R.maxElevation === R.H3 ? '★ 控制工况' : ''],
+        ['④ 正常蓄水位+非常运用+地震', R.normalWL.toFixed(2), R.Y_normal_abnormal_eq.toFixed(4), R.H4 > -1e9 ? R.H4.toFixed(3) : '不适用', R.maxElevation === R.H4 ? '★ 控制工况' : '']
+    ]));
+
+    // === 三、计算结果 ===
+    children.push(new docx.Paragraph({
+        text: '三、计算结果',
+        heading: docx.HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 100 }
+    }));
+
+    children.push(new docx.Paragraph({
+        text: '3.1 坝顶高程',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '控制工况：' + controlCase,
+        spacing: { after: 20 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '四种工况最大高程 = ' + R.maxElevation.toFixed(3) + ' m',
+        spacing: { after: 20 }
+    }));
+    if (R.hasParapet) {
+        children.push(new docx.Paragraph({
+            text: '防浪墙墙顶高程 = ' + R.parapetElevation.toFixed(3) + ' m（四种工况取最大值）',
+            spacing: { after: 10 }
+        }));
+        children.push(new docx.Paragraph({
+            text: '坝顶高程（设计）= 墙顶高程 − 防浪墙高度 = ' + R.parapetElevation.toFixed(3) + ' − ' + R.parapetHeight.toFixed(2) + ' = ' + R.damCrestElevation.toFixed(3) + ' m',
+            spacing: { after: 20 }
+        }));
+    } else {
+        children.push(new docx.Paragraph({
+            text: '坝顶高程（设计）= ' + R.damCrestElevation.toFixed(3) + ' m',
+            spacing: { after: 20 }
+        }));
+    }
+    children.push(new docx.Paragraph({
+        text: '竣工坝顶高程（含预留沉降超高）= ' + R.damCrestElevation.toFixed(3) + ' + ' + R.damSettlement.toFixed(2) + ' = ' + R.finalDamCrest.toFixed(3) + ' m',
+        spacing: { after: 20 }
+    }));
+
+    // 复核
+    children.push(new docx.Paragraph({
+        text: '复核结果：',
+        bold: true,
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常运用复核（坝顶 > 静水位+0.5m）：' + (R.checkPass1 ? '✓ 满足' : '✗ 不满足'),
+        spacing: { after: 10 }
+    }));
+    if (R.adjustedNormal) {
+        children.push(new docx.Paragraph({
+            text: '  ⚠ ' + R.adjustedNormalMsg,
+            spacing: { after: 10 }
+        }));
+    }
+    children.push(new docx.Paragraph({
+        text: '非常运用复核（坝顶 ≥ 校核水位）：' + (R.checkPass2 ? '✓ 满足' : '✗ 不满足'),
+        spacing: { after: 10 }
+    }));
+    if (R.adjustedAbnormal) {
+        children.push(new docx.Paragraph({
+            text: '  ⚠ ' + R.adjustedAbnormalMsg,
+            spacing: { after: 10 }
+        }));
+    }
+
+    // 3.2 防渗体
+    children.push(new docx.Paragraph({
+        text: '3.2 防渗体顶部高程',
+        heading: docx.HeadingLevel.HEADING_2,
+        spacing: { before: 100, after: 60 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '防渗体类型：' + (R.coreType === 'inclined' ? '斜墙' : '心墙'),
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常运用超高 Δh = ' + R.coreDeltaH_min.toFixed(1) + '~' + R.coreDeltaH_max.toFixed(1) + ' m，取中间值 ' + R.coreDeltaH.toFixed(2) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常蓄水位+超高：' + R.normalWL.toFixed(2) + ' + ' + R.coreDeltaH.toFixed(2) + ' = ' + R.coreH1.toFixed(3) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '设计洪水位+超高：' + R.designWL.toFixed(2) + ' + ' + R.coreDeltaH.toFixed(2) + ' = ' + R.coreH2.toFixed(3) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '正常工况取大值：max(' + R.coreH1.toFixed(3) + ', ' + R.coreH2.toFixed(3) + ') = ' + R.coreHmax.toFixed(3) + ' m',
+        spacing: { after: 10 }
+    }));
+    children.push(new docx.Paragraph({
+        text: '防渗体顶部最终高程 = ' + R.coreFinal.toFixed(3) + ' m（含沉降超高 ' + R.coreSettlement.toFixed(2) + ' m）',
+        spacing: { after: 20 }
+    }));
+
+    return children;
+}
+
+// 创建Word表格的辅助函数
+function createWordTable(docx, rows) {
+    return new docx.Table({
+        rows: rows.map(function(row, rowIdx) {
+            return new docx.TableRow({
+                children: row.map(function(cell) {
+                    return new docx.TableCell({
+                        children: [new docx.Paragraph({
+                            text: String(cell),
+                            alignment: docx.AlignmentType.CENTER,
+                            bold: rowIdx === 0
+                        })],
+                        shading: rowIdx === 0 ? { fill: '1a3a5c' } : undefined
+                    });
+                })
+            });
+        }),
+        width: { size: 100, type: docx.WidthType.PERCENTAGE }
+    });
+}
+</script>
+
+<!-- 底部信息 -->
+<div style="text-align:center;padding:20px 0 10px;color:#999;font-size:12px;">
+    依据《碾压式土石坝设计规范》SL274-2001 编制 · 计算结果仅供参考，工程应用请以专业软件和规范复核为准
+</div>
+</body>
+</html>

@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WES堰过流能力及消能防冲计算</title>
+        <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f0f4f8; color: #1a2332; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        /* ===== 页头 ===== */
+        header { text-align: center; padding: 18px 10px 12px; }
+        header h1 { font-size: 22px; color: #0d3b66; letter-spacing: 1px; }
+
+        /* ===== 面板通用 ===== */
+        .panel { background: #fff; border-radius: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); padding: 16px 18px; }
+
+        /* ===== 输入面板（上方） ===== */
+        .panel-input { margin-bottom: 16px; }
+
+        /* ===== 分区标题 ===== */
+        .panel h2 { font-size: 14px; color: #0d3b66; margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1.5px solid #e8eef5; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+        .panel h2:first-child { margin-top: 0; }
+        .panel h2 .icon { font-size: 15px; }
+
+        /* ===== 参数分组 ===== */
+        .param-group { margin-bottom: 10px; }
+        .param-group label { display: block; font-size: 12px; font-weight: 600; color: #3d5166; margin-bottom: 2px; }
+        .param-group .hint { font-size: 10.5px; color: #8a9aa8; margin-bottom: 2px; line-height: 1.3; }
+        .param-group input, .param-group select { width: 100%; padding: 5px 9px; border: 1.5px solid #dce3ec; border-radius: 6px; font-size: 13px; transition: 0.2s; background: #fafbfc; }
+        .param-group input:focus, .param-group select:focus { border-color: #0d3b66; outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(13,59,102,0.08); }
+        .param-group input[type="number"] { font-feature-settings: "tnum"; }
+
+        /* ===== 输入行 ===== */
+        .row2 { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+        .row2 .param-group { flex: 1 0 140px; min-width: 100px; }
+        .row3 { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+        .row3 .param-group { flex: 1 0 130px; min-width: 90px; }
+
+        /* ===== 按钮组 ===== */
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e8eef5; }
+        .btn { padding: 7px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; flex: 1; min-width: 60px; }
+        .btn-primary { background: #0d3b66; color: #fff; }
+        .btn-primary:hover { background: #154e7a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,59,102,0.25); }
+        .btn-secondary { background: #e8eef5; color: #0d3b66; }
+        .btn-secondary:hover { background: #d5dfea; }
+        .btn-success { background: #1a7a4c; color: #fff; }
+        .btn-success:hover { background: #219a5e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,122,76,0.25); }
+
+        /* ===== 结果面板（下方） ===== */
+        .result-panel { min-height: 300px; }
+        .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e8eef5; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        thead { background: #0d3b66; color: #fff; position: sticky; top: 0; }
+        th { padding: 7px 8px; text-align: center; font-weight: 600; white-space: nowrap; font-size: 11.5px; }
+        td { padding: 5px 8px; text-align: center; border-bottom: 1px solid #e8eef5; }
+        tr:nth-child(even) { background: #f7f9fc; }
+        tr:hover { background: #eef3f8; }
+        tr.highlight { background: #fff8e1 !important; font-weight: 600; }
+        .val-m { color: #0d3b66; }
+        .val-q { color: #1a7a4c; font-weight: 700; }
+        .val-sigma { color: #b45a1c; }
+
+        .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+        .tab { padding: 5px 12px; border: 1px solid #dce3ec; border-radius: 6px 6px 0 0; background: #f7f9fc; cursor: pointer; font-size: 12px; font-weight: 500; color: #5a6d80; user-select: none; }
+        .tab.active { background: #fff; border-bottom-color: #fff; color: #0d3b66; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .footer-note { font-size: 11px; color: #6a7e91; line-height: 1.6; padding: 8px 0; }
+        .no-data { text-align: center; padding: 40px 20px; color: #8a9aa8; }
+        .no-data .big-icon { font-size: 36px; margin-bottom: 8px; }
+
+        ::-webkit-scrollbar { height: 5px; width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+                        /* ===== 消能防冲模块（模块二） ===== */
+        .section-title { font-size: 15px; font-weight: 600; color: #0d3b66; margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1.5px dashed #dce3ec; }
+        .m4-grid { display: flex; flex-wrap: wrap; gap: 8px 16px; background: #f7f9fc; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; border: 1px solid #e8eef5; }
+        .m4-field { flex: 1 0 140px; min-width: 110px; }
+        .m4-field label { display: block; font-size: 12px; font-weight: 600; color: #3d5166; margin-bottom: 2px; }
+        .m4-field input, .m4-field select { width: 100%; padding: 5px 9px; border: 1.5px solid #dce3ec; border-radius: 6px; font-size: 13px; transition: 0.2s; background: #fff; }
+        .m4-field input:focus, .m4-field select:focus { border-color: #0d3b66; outline: none; box-shadow: 0 0 0 3px rgba(13,59,102,0.08); }
+        .m4-tip { font-size: 10.5px; color: #8a9aa8; display: block; margin-top: 2px; }
+        .m4-result-table { width: 100%; border-collapse: collapse; font-size: 12.5px; border-radius: 8px; overflow: hidden; border: 1px solid #e8eef5; }
+        .m4-result-table th { background: #0d3b66; color: #fff; padding: 7px 8px; font-weight: 600; text-align: center; white-space: nowrap; font-size: 11.5px; }
+        .m4-result-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #e8eef5; }
+        .m4-result-table tr:nth-child(even) td { background: #f7f9fc; }
+        .m4-result-table tr:hover td { background: #eef3f8; }
+        .m4-result-table .row-max { background: #fff0f0 !important; font-weight: 700; color: #cc0000; }
+        .m4-result-foot { padding: 8px 14px; background: #f7f9fc; font-size: 12px; color: #5a6d80; border-top: 1px solid #e8eef5; line-height: 1.8; border-radius: 0 0 8px 8px; }
+        .m4-val { color: #cc0000; font-size: 15px; font-weight: 700; }
+
+        
+        .dynamic-list { display: flex; flex-direction: column; gap: 4px; }
+        .dynamic-list .item { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: #f7f9fc; border-radius: 6px; border: 1px solid #e8eef5; }
+        .dynamic-list .item .del-btn { cursor: pointer; color: #cc0000; font-weight: 700; font-size: 16px; border: none; background: none; padding: 0 4px; line-height: 1; }
+        .dynamic-list .item .del-btn:hover { color: #ff0000; }
+
+        /* ===== 模块切换栏 ===== */
+        .module-bar { display: flex; gap: 4px; margin-bottom: 16px; background: #e8eef5; border-radius: 10px; padding: 4px; }
+        .module-btn { flex: 1; text-align: center; padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; background: transparent; color: #5a6d80; user-select: none; }
+        .module-btn.active { background: #fff; color: #0d3b66; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .module-btn:hover:not(.active) { color: #0d3b66; }
+        .module-content { display: block; }
+
+        .toolbar-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 12px; background: #f0f7fb; border-radius: 8px; border: 1.5px dashed #d4edf5; }
+        .toolbar-row .divider { width: 1px; background: #d0dce5; margin: 0 4px; }
+        .toolbar-label { font-size: 11px; color: #888; align-self: center; }
+        .btn-green { background: #27ae60; color: #fff; }
+        .btn-green:hover { background: #219a52; }
+        .btn-teal { background: #16a085; color: #fff; }
+        .btn-teal:hover { background: #138d72; }
+        .btn-orange { background: #e67e22; color: #fff; }
+        .btn-orange:hover { background: #d35400; }
+        #file-input-hidden { display: none; }
+        @media print { .btn-group { display: none; } }
+    </style>
+</head>
+<body>
+<input type="file" id="file-input-hidden" accept=".txt" onchange="handleFileLoad(event)">
+<div class="container">
+    <header>
+        <h1>🌊 WES堰过流能力及消能防冲计算</h1>
+        <p style="color:#8a9aa8;font-size:13px;margin-top:4px;">版本 2.2 &nbsp;·&nbsp; 2026年7月10日 &nbsp;·&nbsp; 作者：龙龙</p>
+    </header>
+
+    <!-- ===== 模块切换栏 ===== -->
+    <div class="module-bar">
+        <div class="module-btn active" data-module="module1">📐 模块一 · WES堰过流能力</div>
+        <div class="module-btn" data-module="module2">⚡ 模块二 · 消能防冲</div>
+    </div>
+
+    <div id="module1" class="module-content">
+
+    <!-- ====== 输入面板 ====== -->
+    <div class="panel panel-input">
+<div class="toolbar-row">
+    <span class="toolbar-label">💾 数据：</span>
+    <button class="btn btn-green btn-sm" onclick="saveInputsToTxt('m1')" style="flex:0 0 auto;padding:5px 12px;font-size:12px;">📥 保存到TXT</button>
+    <button class="btn btn-teal btn-sm" onclick="loadInputsFromTxt('m1')" style="flex:0 0 auto;padding:5px 12px;font-size:12px;">📤 从TXT载入</button>
+    <span class="divider"></span>
+    <button class="btn btn-orange btn-sm" onclick="exportModule1ToWord()" style="flex:0 0 auto;padding:5px 12px;font-size:12px;">📝 导出计算书Word</button>
+</div>
+            <h2><span class="icon">⚙️</span> 基本参数</h2>
+            <div class="row2">
+                <div class="param-group">
+                    <label>堰顶高程 (m)</label>
+                    <input type="number" id="crestEL" value="100.0" step="0.1">
+                </div>
+                <div class="param-group">
+                    <label>设计水头 H<sub>d</sub> (m)</label>
+                    <input type="number" id="Hd" value="2.0" step="0.1" min="0.1">
+                </div>
+            </div>
+            <div class="row2">
+                <div class="param-group">
+                    <label>上游堰高 P<sub>1</sub> (m)</label>
+                    <input type="number" id="P1" value="1.0" step="0.1" min="0">
+                </div>
+                <div class="param-group">
+                    <label>下游堰高 P<sub>2</sub> (m)</label>
+                    <input type="number" id="P2" value="3.0" step="0.1" min="0">
+                </div>
+            </div>
+
+            <!-- 闸孔参数 -->
+            <div class="row2">
+                <div class="param-group">
+                    <label>闸孔数目 n</label>
+                    <input type="number" id="n" value="2" step="1" min="1" max="50">
+                </div>
+                <div class="param-group">
+                    <label>单孔净宽 b (m)</label>
+                    <input type="number" id="b" value="10.0" step="0.5" min="1">
+                </div>
+            </div>
+
+            <!-- 上游水位扫描范围 -->
+            <h2><span class="icon">📊</span> 上游水位扫描</h2>
+            <div class="hint">堰顶水深 H = 上游水位 − 堰顶高程</div>
+            <div class="row3">
+                <div class="param-group">
+                    <label>起始上游水位 (m)</label>
+                    <input type="number" id="WLmin" value="100.0" step="0.1">
+                </div>
+                <div class="param-group">
+                    <label>终止上游水位 (m)</label>
+                    <input type="number" id="WLmax" value="103.0" step="0.1">
+                </div>
+                <div class="param-group">
+                    <label>步长 (m)</label>
+                    <input type="number" id="WLstep" value="0.2" step="0.1" min="0.05">
+                </div>
+            </div>
+
+            <!-- 特征流量反算 -->
+            <h2><span class="icon">🔄</span> 特征流量反算</h2>
+            <div class="hint">输入目标流量，反算所需堰顶水深 H</div>
+            <div class="row3">
+                <div class="param-group">
+                    <label>设计洪水 Q<sub>设</sub> (m³/s)</label>
+                    <input type="number" id="Qdesign" value="400" step="1" min="0">
+                </div>
+                <div class="param-group">
+                    <label>校核洪水 Q<sub>校</sub> (m³/s)</label>
+                    <input type="number" id="Qcheck" value="500" step="1" min="0">
+                </div>
+                <div class="param-group">
+                    <label>消能防冲 Q<sub>消</sub> (m³/s)</label>
+                    <input type="number" id="Qscour" value="400" step="1" min="0">
+                </div>
+            </div>
+            <div class="row2" style="margin-top:8px;">
+                <div class="param-group">
+                    <label>正常蓄水位高程 (m)</label>
+                    <div class="hint">输入上游正常蓄水位，计算对应过流流量</div>
+                    <input type="number" id="normalWL" value="101.0" step="0.1">
+                </div>
+            </div>
+
+            <!-- 堰面坡度 -->
+            <h2><span class="icon">📐</span> 堰面几何</h2>
+            <div class="param-group">
+                <label>上游堰面类型</label>
+                <select id="vertical" onchange="toggleSlopeInput()">
+                    <option value="yes" selected>铅直（C=1.0）</option>
+                    <option value="no">倾斜（输入 Δy/Δx 查表）</option>
+                </select>
+            </div>
+            <div class="param-group" id="slopeGroup" style="display:none;">
+                <label>上游堰面坡度 Δy/Δx</label>
+                <div class="hint">水平变化量 ÷ 垂直变化量，如 3:1 请输入 3.0，3:2 请输入 1.5</div>
+                <input type="number" id="slopeRatio" value="3.0" step="0.1" min="0.5">
+            </div>
+
+            <!-- 墩形系数 -->
+            <h2><span class="icon">🏗️</span> 闸墩形状</h2>
+            <div class="param-group">
+                <label>边墩形状系数 ζ<sub>k</sub></label>
+                <select id="sidePier">
+                    <option value="1.0" selected>直角形 — ζ=1.0</option>
+                    <option value="0.7">圆弧形 — ζ=0.7</option>
+                    <option value="0.7-b">折线形 — ζ=0.7</option>
+                    <option value="0.4">流线形 — ζ=0.4</option>
+                </select>
+            </div>
+            <div class="param-group">
+                <label>中墩墩头形状</label>
+                <select id="midPier">
+                    <option value="rect">矩形</option>
+                    <option value="round" selected>楔形或半圆形</option>
+                    <option value="sharp">尖圆形</option>
+                </select>
+            </div>
+            <div class="row2">
+                <div class="param-group">
+                    <label>闸墩伸出长度 L<sub>u</sub> (m)</label>
+                    <div class="hint">程序根据H₀自动计算 L<sub>u</sub>/H₀ 并查表</div>
+                    <input type="number" id="Lu" value="0" step="0.1" min="0">
+                </div>
+                <div class="param-group" id="hsGroup">
+                    <label>下游水位 (m)</label>
+                    <div class="hint">h<sub>s</sub> = 下游水位 − 堰顶高程。用于计算中墩形状系数，可为负值</div>
+                    <input type="number" id="dsWL" value="97" step="0.1">
+                </div>
+            </div>
+
+            <!-- 淹没系数 -->
+            <h2><span class="icon">🌊</span> 淹没系数</h2>
+            <div class="param-group">
+                <label>淹没系数 σ<sub>s</sub></label>
+                <div class="hint">由WES淹没曲线图读取后手动输入，默认自由出流σ<sub>s</sub>=1.0</div>
+                <input type="number" id="sigmaInput" value="1.0" step="0.001" min="0" max="1">
+            </div>
+
+            <!-- 行近流速 -->
+            <h2><span class="icon">🌊</span> 行近流速</h2>
+            <div class="row2">
+                <div class="param-group">
+                    <label>考虑行近流速</label>
+                    <select id="useVelocity">
+                        <option value="yes" selected>是（迭代计算）</option>
+                        <option value="no">否（H₀ = H）</option>
+                    </select>
+                </div>
+                <div class="param-group">
+                    <label>上游河道宽度 B<sub>c</sub> (m)</label>
+                    <input type="number" id="Bc" value="25" step="1" min="1">
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="calculate()">▶ 计算</button>
+                <button class="btn btn-secondary" onclick="resetParams()">↺ 重置</button>
+            </div>
+        </div>
+
+        <!-- ====== 右侧结果面板 ====== -->
+        <div class="panel result-panel">
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active" data-tab="tab-table" onclick="switchTab('tab-table')">📋 结果表格</div>
+                <div class="tab" data-tab="tab-detail" onclick="switchTab('tab-detail')">📝 计算过程</div>
+            </div>
+
+            <!-- Tab: 表格 -->
+            <div id="tab-table" class="tab-content active">
+                <div id="tableArea" class="table-wrap"></div>
+                <div class="footer-note">
+                    <strong>说明：</strong> 上游水位 — 扫描的上游库水位；H — 堰顶水深；H₀ — 计入行近流速的总水头；m — 流量系数；C — 上游堰坡修正系数；ε — 侧收缩系数；σ<sub>s</sub> — 淹没系数；v — 行近流速；hv — 流速水头(=v²/2g)；Q — 过流流量。标注"◆"的行为特征流量反算结果。σ<sub>s</sub> 由WES淹没曲线图读取后手动输入。
+                </div>
+            </div>
+
+            <!-- Tab: 详细参数 -->
+            <div id="tab-detail" class="tab-content">
+                <div id="detailArea"></div>
+            </div>
+
+        </div>
+</div>
+
+        <div id="module2" class="module-content" style="display:none">
+        <div class="panel">
+<div class="toolbar-row">
+    <span class="toolbar-label">💾 数据：</span>
+    <button class="btn btn-green btn-sm" onclick="saveInputsToTxt('m2')" style="flex:0 0 auto;padding:5px 12px;font-size:12px;">📥 保存到TXT</button>
+    <button class="btn btn-teal btn-sm" onclick="loadInputsFromTxt('m2')" style="flex:0 0 auto;padding:5px 12px;font-size:12px;">📤 从TXT载入</button>
+    <span class="divider"></span>
+    <button class="btn btn-orange btn-sm" onclick="exportModule2ToWord()" style="flex:0 0 auto;padding:5px 12px;font-size:12px;">📝 导出计算书Word</button>
+</div>
+            <h2 style="margin-top:0;">⚡ 消能防冲计算</h2>
+            <p style="font-size:13px;color:#6a7e91;margin-bottom:14px;">引用模块一（WES堰过流能力）特征流量数据，计算消力池深度、长度、底板厚度、海漫长度及冲刷深度</p>
+
+            <div class="module4-status" id="m4-status" style="background:#f7f9fc;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#5a6d80;">
+                💡 请先在<strong>模块一</strong>中完成计算，再切换到此模块查看结果
+            </div>
+
+                                    <!-- ===== 下游水位-流量关系曲线 ===== -->
+            <div class="section-title">📊 下游水位-流量关系曲线</div>
+            <p style="font-size:12px;color:#8a9aa8;margin-bottom:8px;">输入下游水位与流量的对应关系，程序自动插值计算各工况的下游水位。若留空则使用模块一中的固定下游水位。</p>
+
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+                <button class="btn btn-secondary" onclick="addM4RatingRow()" style="flex:0 0 auto;padding:4px 14px;font-size:12px;">＋ 添加行</button>
+                <button class="btn btn-secondary" onclick="clearM4RatingRows()" style="flex:0 0 auto;padding:4px 14px;font-size:12px;">🗑 清空</button>
+                <button class="btn btn-secondary" onclick="toggleM4PasteArea()" style="flex:0 0 auto;padding:4px 14px;font-size:12px;">📋 从Excel批量粘贴</button>
+            </div>
+            <div class="m4-paste-area" id="m4-paste-area" style="display:none;margin-bottom:8px;">
+                <textarea id="m4-paste-text" placeholder="从Excel中复制数据后粘贴到这里（每行两列：水位 流量，Tab或空格分隔）&#10;例如：&#10;95.0	0&#10;96.0	120&#10;97.0	300" style="width:100%;height:80px;padding:8px 10px;font-size:13px;border:1.5px solid #dce3ec;border-radius:6px;font-family:Consolas,monospace;resize:vertical;"></textarea>
+                <div style="text-align:right;margin-top:4px;"><button class="btn btn-primary" onclick="parseM4Paste()" style="padding:4px 14px;font-size:12px;">✅ 确认导入</button></div>
+            </div>
+            <div class="dynamic-list" id="m4-rating-area" style="margin-bottom:14px;"></div>
+
+<!-- ===== 一、消力池深度计算 ===== -->
+            <div class="section-title">一、消力池深度计算</div>
+            <p style="font-size:12px;color:#8a9aa8;margin-bottom:10px;">引用模块一全部过流计算结果（水位扫描+特征流量），批量计算收缩水深 h<sub>c</sub>、跃后水深 h<sub>c</sub>"，迭代求解消力池深度 d'</p>
+            <div style="background:#eaf7ea;border:1.5px solid #1a7a4c;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1a7a4c;line-height:1.6;font-weight:600;">
+                （1）闸门全开，不同水位对应的流量工况。
+            </div>
+
+            <div class="m4-grid">
+                <div class="m4-field">
+                    <label>消力池尾坎高程 (m) <span style="font-weight:400;color:#8a9aa8;">（下游河床高程）</span></label>
+                    <input type="number" id="m4_tail" value="97" step="0.1">
+                </div>
+                <div class="m4-field">
+                    <label>消力池总宽度 B (m)</label>
+                    <input type="number" id="m4_B_depth" value="25" step="0.1" min="0.1">
+                </div>
+                <div class="m4-field">
+                    <label>动能校正系数 α</label>
+                    <input type="number" id="m4_alpha_d" value="1.0" step="0.01" min="1.0" max="1.05">
+                </div>
+                <div class="m4-field">
+                    <label>流速系数 φ</label>
+                    <input type="number" id="m4_phi_d" value="0.95" step="0.01" min="0.8" max="1.0">
+                </div>
+                <div class="m4-field">
+                    <label>水跃淹没系数 σ₀</label>
+                    <input type="number" id="m4_sigma0" value="1.05" step="0.01" min="1.0" max="1.2">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn btn-primary" onclick="module4DepthCalc()" style="flex:0 0 auto;padding:7px 20px;">🧮 批量计算 hc、hc" 及消力池深度</button>
+            </div>
+
+            <div id="m4-depth-result" style="display:none;">
+                <div id="m4-depth-table"></div>
+            </div>
+
+
+<!-- ===== （2）正常蓄水位时，不同开度消力池深度计算 ===== -->
+            <div style="background:#eaf7ea;border:1.5px solid #1a7a4c;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1a7a4c;line-height:1.6;font-weight:600;">
+                （2）正常蓄水位时，不同开度消力池深度计算。
+            </diV>
+
+	        <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn btn-primary" onclick="module4DepthCalc2()" style="flex:0 0 auto;padding:7px 20px;">🧮 批量计算 hc、hc" 及消力池深度</button>
+            </div>
+
+            <div id="m4-depth-result-2" style="display:none;">
+                <div id="m4-depth-table-2"></div>
+            </div>
+
+
+<!-- ===== 二、消力池长度计算 ===== -->
+            <div class="section-title">二、消力池长度计算</div>
+            <p style="font-size:12px;color:#8a9aa8;margin-bottom:10px;">引用模块一三种特征流量（设计/校核/消能防冲）数据，计算收缩水深、跃后水深及消力池长度</p>
+
+            <div class="m4-grid">
+                <div class="m4-field">
+                    <label>下游消力池总宽度 B (m)</label>
+                    <input type="number" id="m4_B" value="25" step="0.1" min="0.1">
+                </div>
+                <div class="m4-field">
+                    <label>拟定消力池深度 d (m)</label>
+                    <input type="number" id="m4_d" value="1.5" step="0.01" min="0">
+                </div>
+                <div class="m4-field">
+                    <label>校正系数 β</label>
+                    <input type="number" id="m4_beta" value="0.7" step="0.01" min="0.5" max="1.0">
+                    <span class="m4-tip">0.7~0.8</span>
+                </div>
+                <div class="m4-field">
+                    <label>动能校正系数 α</label>
+                    <input type="number" id="m4_alpha" value="1.0" step="0.01" min="1.0" max="1.05">
+                </div>
+                <div class="m4-field">
+                    <label>流速系数 φ</label>
+                    <input type="number" id="m4_phi" value="0.95" step="0.01" min="0.8" max="1.0">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn btn-primary" onclick="module4LengthCalc()" style="flex:0 0 auto;padding:7px 20px;">🧮 计算消力池长度</button>
+            </div>
+
+            <div id="m4-length-result" style="display:none;">
+                <div id="m4-length-table"></div>
+            </div>
+
+            <!-- ===== 三、消力池抗冲计算（底板厚度） ===== -->
+            <div class="section-title" style="margin-top:20px;">三、消力池抗冲计算（底板厚度）</div>
+            <p style="font-size:12px;color:#8a9aa8;margin-bottom:10px;">引用消能防冲流量数据，计算消力池底板抗冲厚度</p>
+
+            <div class="m4-grid" style="grid-template-columns:1fr 1fr;">
+                <div class="m4-field">
+                    <label>抗冲系数 k₁</label>
+                    <input type="number" id="m4_k1" value="0.175" step="0.005" min="0.1" max="0.25">
+                    <span class="m4-tip">0.15~0.20</span>
+                </div>
+                <div class="m4-field">
+                    <label>消力池总宽度 B (m)</label>
+                    <input type="number" id="m4_B_anti" value="25" step="0.1" min="0.1">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn btn-primary" onclick="module4AntiScour()" style="flex:0 0 auto;padding:7px 20px;">🧮 抗冲厚度计算</button>
+            </div>
+
+            <div id="m4-anti-result" style="display:none;">
+                <div id="m4-anti-detail"></div>
+            </div>
+
+            <!-- ===== 四、海漫长度计算 ===== -->
+            <div class="section-title" style="margin-top:20px;">四、海漫长度计算</div>
+            <p style="font-size:12px;color:#8a9aa8;margin-bottom:10px;">按河床土质选取系数 Ks，计算海漫长度</p>
+            <div style="background:#fff0f0;border:1.5px solid #cc0000;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#cc0000;line-height:1.6;font-weight:600;">
+                ⚠️ 注意：上下游水位差用消力池出口水位 − 海漫末端水位可能更合理，请根据工程实际情况判断选用。
+            </div>
+
+            <div class="m4-grid" style="grid-template-columns:1fr 1fr 1fr;">
+                <div class="m4-field">
+                    <label>河床土质</label>
+                    <select id="m4_ks_select" onchange="updateKsValue()">
+                        <option value="13.5">粉砂细砂（Ks=14~13）</option>
+                        <option value="11.5" selected>中砂、粗砂、粉质壤土（Ks=12~11）</option>
+                        <option value="9.5">粉质黏土（Ks=10~9）</option>
+                        <option value="7.5">坚硬黏土（Ks=8~7）</option>
+                    </select>
+                </div>
+                <div class="m4-field">
+                    <label>选用 Kₛ</label>
+                    <input type="number" id="m4_Ks" value="11.5" step="0.1" min="5" max="15">
+                </div>
+                <div class="m4-field">
+                    <label>消力池总宽度 B (m)</label>
+                    <input type="number" id="m4_B_apron" value="25" step="0.1" min="0.1">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn btn-primary" onclick="module4Apron()" style="flex:0 0 auto;padding:7px 20px;">🧮 计算海漫长度</button>
+            </div>
+
+            <div id="m4-apron-result" style="display:none;">
+                <div id="m4-apron-detail"></div>
+            </div>
+
+            <!-- ===== 五、冲刷深度计算 ===== -->
+            <div class="section-title" style="margin-top:20px;">五、冲刷深度计算</div>
+            <p style="font-size:12px;color:#8a9aa8;margin-bottom:10px;">引用消能防冲流量数据，计算海漫末端河床冲刷深度</p>
+
+            <div class="m4-grid" style="grid-template-columns:1fr 1fr 1fr;">
+                <div class="m4-field">
+                    <label>海漫末端高程 (m)</label>
+                    <input type="number" id="m4_apron_end" value="96" step="0.1">
+                </div>
+                <div class="m4-field">
+                    <label>允许不冲流速 [v₀] (m/s)</label>
+                    <input type="number" id="m4_v0" value="0.8" step="0.05" min="0.3" max="2.0">
+                </div>
+                <div class="m4-field">
+                    <label>消力池总宽度 B (m)</label>
+                    <input type="number" id="m4_B_scour" value="25" step="0.1" min="0.1">
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn btn-primary" onclick="module4Scour()" style="flex:0 0 auto;padding:7px 20px;">🧮 计算冲刷深度</button>
+            </div>
+
+            <div id="m4-scour-result" style="display:none;">
+                <div id="m4-scour-detail"></div>
+            </div>
+
+            <!-- ===== 消能防冲计算公式 ===== -->
+            <div style="background:#f7f9fc;border-radius:8px;padding:16px;border:1px solid #e8eef5;margin-top:14px;">
+                <h3 style="font-size:14px;color:#0d3b66;margin-bottom:10px;">📋 消能防冲计算公式</h3>
+                <div style="font-size:12.5px;line-height:2.2;color:#3d5166;">
+                    <div><strong style="color:#0d3b66;">收缩水深 h<sub>c</sub></strong>：h<sub>c</sub>³ − T₀·h<sub>c</sub>² + α·q²/(2g·φ²) = 0（牛顿迭代求解）</div>
+                    <div><strong style="color:#0d3b66;">跃后水深 h<sub>c</sub>"</strong>：h<sub>c</sub>" = h<sub>c</sub>/2 · (√(1+8Fr²) − 1)，Fr² = α·q²/(g·h<sub>c</sub>³)</div>
+                    <div><strong style="color:#0d3b66;">出池落差 Δz</strong>：Δz = α·q²/(2g) · [1/(φ²·h<sub>s</sub>²) − 1/(h<sub>c</sub>"²)]</div>
+                    <div><strong style="color:#0d3b66;">消力池深度 d'</strong>：d' = σ₀·h<sub>c</sub>" − h<sub>s</sub> − Δz（迭代至收敛）</div>
+                    <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #dce3ec;">
+                        <div><strong style="color:#0d3b66;">消力池长度 L<sub>gj</sub></strong>：L<sub>j</sub> = 6.9×(h<sub>c</sub>"−h<sub>c</sub>)，L<sub>gj</sub> = β·L<sub>j</sub></div>
+                        <div><strong style="color:#0d3b66;">底板抗冲厚度 t</strong>：t = k₁·√q·√ΔH'</div>
+                        <div><strong style="color:#0d3b66;">海漫长度 L<sub>p</sub></strong>：L<sub>p</sub> = K<sub>s</sub>·√(q<sub>s</sub>·√ΔH')</div>
+                        <div><strong style="color:#0d3b66;">冲刷深度 d<sub>m</sub></strong>：d<sub>m</sub> = 1.1·q<sub>m</sub>/[v₀] − h<sub>m</sub></div>
+                    </div>
+                    <div style="margin-top:6px;padding:8px 12px;background:#fff;border-radius:6px;font-size:11.5px;color:#6a7e91;">
+                        <strong>参数说明：</strong><br>
+                        T₀ = H₀ + 堰顶高程 − 尾坎高程（+ d'）｜q = 单宽流量｜h<sub>s</sub> = 下游水位 − 尾坎高程<br>
+                        ΔH' = 上游水位 − 下游水位｜q<sub>s</sub>、q<sub>m</sub> = 末端单宽流量｜h<sub>m</sub> = 下游水位 − 海漫末端高程
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div></div>
+
+<script>
+// ============================================================
+//  WES 实用堰 流量系数 m 表
+//  行: H₀/H_d  列: P₁/H_d
+// ============================================================
+const M_TABLE = {
+    rows: [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3],
+    cols: [0.2, 0.4, 0.6, 1.0, 1.33],
+    data: [
+        [0.425, 0.430, 0.431, 0.433, 0.436],
+        [0.438, 0.442, 0.445, 0.448, 0.451],
+        [0.450, 0.455, 0.458, 0.460, 0.464],
+        [0.458, 0.463, 0.468, 0.472, 0.476],
+        [0.467, 0.474, 0.477, 0.482, 0.486],
+        [0.473, 0.480, 0.485, 0.491, 0.494],
+        [0.479, 0.486, 0.491, 0.496, 0.501],
+        [0.482, 0.491, 0.496, 0.502, 0.507],
+        [0.485, 0.495, 0.499, 0.506, 0.510],
+        [0.496, 0.498, 0.500, 0.508, 0.513]
+    ]
+};
+
+// ============================================================
+//  上游堰坡影响修正系数 C 表
+//  行: Δy/Δx  列: P₁/H_d
+// ============================================================
+const C_TABLE = {
+    rows: [3.0, 1.5, 1.0],
+    cols: [0.3, 0.4, 0.6, 0.8, 1.0, 1.2, 1.3],
+    data: [
+        [1.009, 1.007, 1.004, 1.002, 1.000, 0.998, 0.997],
+        [1.015, 1.011, 1.005, 1.002, 0.999, 0.996, 0.993],
+        [1.021, 1.014, 1.007, 1.002, 0.998, 0.993, 0.988]
+    ]
+};
+
+// ============================================================
+//  中墩形状系数 ζ₀ 表
+//  按墩头形状、Lᵤ/H₀、hₛ/H₀ 查表
+// ============================================================
+const ZETA0_TABLE = {
+    // 墩头形状: { L_u/H₀: { 条件: 值 } }
+    'rect': {  // 矩形
+        1.0: { default: 0.20 },
+        0.5: { default: 0.40 },
+        0:   { hs75: 0.80, hs80: 0.86, hs85: 0.92, hs90: 0.98 }
+    },
+    'round': {  // 楔形或半圆形
+        1.0: { default: 0.15 },
+        0.5: { default: 0.30 },
+        0:   { hs75: 0.45, hs80: 0.51, hs85: 0.57, hs90: 0.63 }
+    },
+    'sharp': {  // 尖圆形
+        1.0: { default: 0.15 },
+        0.5: { default: 0.15 },
+        0:   { hs75: 0.25, hs80: 0.32, hs85: 0.39, hs90: 0.46 }
+    }
+};
+
+// ============================================================
+//  工具函数
+// ============================================================
+
+/** 双线性插值 */
+function bilinearInterp(table, x, y) {
+    const rows = table.rows, cols = table.cols, data = table.data;
+    if (x <= rows[0]) return lerpRow(0, y);
+    if (x >= rows[rows.length-1]) return lerpRow(rows.length-1, y);
+
+    let ri = 0;
+    for (let i = 0; i < rows.length-1; i++) {
+        if (x >= rows[i] && x <= rows[i+1]) { ri = i; break; }
+    }
+
+    const x0 = rows[ri], x1 = rows[ri+1];
+    const tx = (x - x0) / (x1 - x0);
+
+    const f0 = lerpRow(ri, y);
+    const f1 = lerpRow(ri+1, y);
+    return f0 + tx * (f1 - f0);
+
+    function lerpRow(rowIdx, yy) {
+        const rowData = data[rowIdx];
+        if (yy <= cols[0]) return rowData[0];
+        if (yy >= cols[cols.length-1]) return rowData[cols.length-1];
+        let ci = 0;
+        for (let j = 0; j < cols.length-1; j++) {
+            if (yy >= cols[j] && yy <= cols[j+1]) { ci = j; break; }
+        }
+        const y0 = cols[ci], y1 = cols[ci+1];
+        const ty = (yy - y0) / (y1 - y0);
+        return rowData[ci] + ty * (rowData[ci+1] - rowData[ci]);
+    }
+}
+
+/** 查中墩形状系数 ζ₀（支持任意 Lᵤ/H₀ 的线性插值） */
+function getZeta0(pierType, LuRatio, hsH0) {
+    const pier = ZETA0_TABLE[pierType];
+    if (!pier) return 0.45;
+
+    // 1. L_u/H₀ = 0 时的值（依赖 hₛ/H₀）
+    const lu0data = pier[0];
+    let z0_at_0;
+    if (lu0data) {
+        const pts = [
+            { hs: 0.75, val: lu0data.hs75 },
+            { hs: 0.80, val: lu0data.hs80 },
+            { hs: 0.85, val: lu0data.hs85 },
+            { hs: 0.90, val: lu0data.hs90 }
+        ];
+        if (hsH0 <= pts[0].hs) z0_at_0 = pts[0].val;
+        else if (hsH0 >= pts[3].hs) z0_at_0 = pts[3].val;
+        else {
+            for (let i = 0; i < pts.length-1; i++) {
+                if (hsH0 >= pts[i].hs && hsH0 <= pts[i+1].hs) {
+                    const t = (hsH0 - pts[i].hs) / (pts[i+1].hs - pts[i].hs);
+                    z0_at_0 = pts[i].val + t * (pts[i+1].val - pts[i].val);
+                    break;
+                }
+            }
+        }
+    } else {
+        z0_at_0 = 0.45;
+    }
+
+    // 2. L_u/H₀ = 0.5 时的固定值
+    const z0_at_05 = (pier[0.5] && pier[0.5].default !== undefined) ? pier[0.5].default : 0.45;
+
+    // 3. L_u/H₀ = 1.0 时的固定值
+    const z0_at_10 = (pier[1.0] && pier[1.0].default !== undefined) ? pier[1.0].default : 0.45;
+
+    // 根据 LuRatio 插值
+    if (LuRatio <= 0) {
+        return z0_at_0;
+    } else if (LuRatio < 0.5) {
+        const t = LuRatio / 0.5;
+        return z0_at_0 + t * (z0_at_05 - z0_at_0);
+    } else if (LuRatio < 1.0) {
+        const t = (LuRatio - 0.5) / 0.5;
+        return z0_at_05 + t * (z0_at_10 - z0_at_05);
+    } else {
+        return z0_at_10;
+    }
+}
+
+/** 查上游堰坡修正系数 C（支持任意 Δy/Δx 值的线性插值） */
+function getCValue(dy_dx, P1_Hd) {
+    const rows = C_TABLE.rows;   // [3.0, 1.5, 1.0]
+    const cols = C_TABLE.cols;
+    const data = C_TABLE.data;
+
+    // 对每一个 Δy/Δx 锚点，先沿 P₁/H_d 方向做一维插值
+    function interpAtRow(rowIdx) {
+        const vals = data[rowIdx];
+        if (P1_Hd <= cols[0]) return vals[0];
+        if (P1_Hd >= cols[cols.length - 1]) return vals[cols.length - 1];
+        for (let j = 0; j < cols.length - 1; j++) {
+            if (P1_Hd >= cols[j] && P1_Hd <= cols[j + 1]) {
+                const t = (P1_Hd - cols[j]) / (cols[j + 1] - cols[j]);
+                return vals[j] + t * (vals[j + 1] - vals[j]);
+            }
+        }
+        return vals[cols.length - 1];
+    }
+
+    // 边界：超出表格范围则取端点值
+    if (dy_dx >= rows[0]) return interpAtRow(0);          // ≥ 3.0 → 用 3:1 行
+    if (dy_dx <= rows[rows.length - 1]) return interpAtRow(rows.length - 1); // ≤ 1.0 → 用 3:3 行
+
+    // 找到 dy_dx 所在区间，做线性插值
+    for (let i = 0; i < rows.length - 1; i++) {
+        if (dy_dx > rows[i + 1] && dy_dx < rows[i]) {
+            const c0 = interpAtRow(i);
+            const c1 = interpAtRow(i + 1);
+            const t = (dy_dx - rows[i + 1]) / (rows[i] - rows[i + 1]);
+            return c1 + t * (c0 - c1);
+        }
+    }
+    return 1.0;
+}
+
+// ============================================================
+//  核心计算
+// ============================================================
+
+function calculate() {
+    // 读取参数
+    const crestEL  = parseFloat(document.getElementById('crestEL').value);
+    const Hd       = parseFloat(document.getElementById('Hd').value);
+    const P1       = parseFloat(document.getElementById('P1').value);
+    const P2       = parseFloat(document.getElementById('P2').value);
+    const n        = parseInt(document.getElementById('n').value);
+    const b        = parseFloat(document.getElementById('b').value);
+    const WLmin    = parseFloat(document.getElementById('WLmin').value);
+    const WLmax    = parseFloat(document.getElementById('WLmax').value);
+    const WLstep   = parseFloat(document.getElementById('WLstep').value);
+    const dsWL     = parseFloat(document.getElementById('dsWL').value);
+    const vertical = document.getElementById('vertical').value;
+    const slopeRatio = parseFloat(document.getElementById('slopeRatio').value);
+    const sidePierVal = parseFloat(document.getElementById('sidePier').value);
+    const midPier  = document.getElementById('midPier').value;
+    const Lu       = parseFloat(document.getElementById('Lu').value);
+    const useVel   = document.getElementById('useVelocity').value;
+    const Bc       = parseFloat(document.getElementById('Bc').value);
+    const sigmaUser = parseFloat(document.getElementById('sigmaInput').value) || 0;
+    const Qdesign   = parseFloat(document.getElementById('Qdesign').value) || 0;
+    const Qcheck    = parseFloat(document.getElementById('Qcheck').value) || 0;
+    const Qscour    = parseFloat(document.getElementById('Qscour').value) || 0;
+    const normalWL  = parseFloat(document.getElementById('normalWL').value) || 0;
+
+    const g = 9.81;
+    const B = n * b; // 总净宽
+
+    // 计算水深
+    let hs = dsWL - crestEL;          // 下游超过堰顶水深（可为负，用于中墩形状系数查询）
+
+    // 校验
+    if (WLmin >= WLmax) { alert('起始上游水位必须小于终止上游水位！'); return; }
+    if (Hd <= 0 || P1 < 0 || n < 1 || b <= 0) { alert('请检查基本参数！'); return; }
+    if (hs < 0) { hs = 0; }
+
+    // 生成上游水位序列 → 换算为 H 序列
+    const Hvals = [];
+    const WLvals = [];
+    for (let wl = WLmin; wl <= WLmax + 1e-9; wl = Math.round((wl + WLstep) * 100) / 100) {
+        const H = wl - crestEL;         // 堰顶水深 H = 上游水位 − 堰顶高程
+        if (H <= 0) continue;
+        Hvals.push(H);
+        WLvals.push(wl);
+    }
+
+    const results = [];
+
+    // ---- 辅助：给定 H 计算单工况 ----
+    function computeForH(H, tag) {
+        let H0 = H;
+        let iter = 0, maxIter = 20;
+        let m, C, eps, sigma, Q, LuRatio, v, hv;
+        let prevQ = 0;
+
+        while (iter < maxIter) {
+            const rH = H0 / Hd;
+            const rP = P1 / Hd;
+
+            m = bilinearInterp(M_TABLE, rH, rP);
+            if (rH < M_TABLE.rows[0]) m = M_TABLE.data[0][findColIdx(rP)];
+            if (rH > M_TABLE.rows[M_TABLE.rows.length-1]) m = M_TABLE.data[M_TABLE.rows.length-1][findColIdx(rP)];
+
+            let Cval = 1.0;
+            if (vertical === 'no') Cval = getCValue(slopeRatio, rP);
+            C = Cval;
+
+            const hsH0 = hs / H0;
+            LuRatio = Lu / H0;
+            const zeta0 = getZeta0(midPier, LuRatio, hsH0);
+            const zetaK = sidePierVal;
+            const H0_nb = H0 / (n * b);
+            const clampedRatio = Math.min(H0_nb, 1.0);
+            eps = 1 - 0.2 * (zetaK + (n - 1) * zeta0) * clampedRatio;
+            eps = Math.max(eps, 0.6);
+
+            sigma = sigmaUser;
+            Q = C * m * eps * sigma * B * Math.sqrt(2 * g) * Math.pow(H0, 1.5);
+
+            if (useVel === 'yes') {
+                const approachDepth = P1 + H;
+                const A = Bc * approachDepth;
+                v = Q / A;
+                hv = (v * v) / (2 * g);
+                const newH0 = H + hv;
+                if (Math.abs(newH0 - H0) < 0.001 && Math.abs(Q - prevQ) < 0.001) break;
+                H0 = newH0;
+                prevQ = Q;
+            } else {
+                v = 0; hv = 0;
+                break;
+            }
+            iter++;
+        }
+        // 如果未考虑行近流速，补充 v
+        if (useVel !== 'yes') {
+            const approachDepth = P1 + H;
+            const A = Bc * approachDepth;
+            v = A > 0 ? Q / A : 0;
+            hv = (v * v) / (2 * g);
+        }
+
+        return {
+            H, H0, upstreamWL: crestEL + H, crestEL,
+            H0_Hd: H0 / Hd, P1_Hd: P1 / Hd, P2_H0: P2 / H0,
+            m, C, eps, sigma, Q, v, hv,
+            hsH0: hs / H0, Lu, LuRatio,
+            zeta0: getZeta0(midPier, LuRatio, hs / H0),
+            tag: tag || ''
+        };
+    }
+
+    // ---- 正向扫描 ----
+    for (let i = 0; i < Hvals.length; i++) {
+        const H = Hvals[i];
+        results.push(computeForH(H));
+    }
+
+    // ---- 反向计算（特征流量→H） ----
+    const targets = [
+        { val: Qdesign, name: '设计洪水' },
+        { val: Qcheck,  name: '校核洪水' },
+        { val: Qscour,  name: '消能防冲' }
+    ];
+
+    // 取扫描范围作为搜索边界
+    const H_low  = 0.01;
+    const H_high = Math.max(Hvals.length > 0 ? Hvals[Hvals.length-1] * 2 : 10, 10);
+
+    for (const t of targets) {
+        if (!t.val || t.val <= 0) continue;
+
+        let lo = H_low, hi = H_high;
+        let best = null;
+
+        for (let iter = 0; iter < 60; iter++) {
+            const mid = (lo + hi) / 2;
+            const r = computeForH(mid, t.name);
+            if (iter === 0) best = r;
+            if (Math.abs(r.Q - t.val) < Math.abs(best.Q - t.val)) best = r;
+
+            if (Math.abs(r.Q - t.val) < 0.001) { best = r; break; }
+            if (r.Q > t.val) hi = mid;
+            else lo = mid;
+        }
+
+        if (best) {
+            best.tag = '◆ ' + t.name;
+            results.push(best);
+        }
+    }
+
+    // ---- 正常蓄水位高程 → Q（正向计算） ----
+    if (normalWL > crestEL) {
+        const H_normal = normalWL - crestEL;
+        const r_normal = computeForH(H_normal, '正常蓄水位');
+        r_normal.tag = '◆ 正常蓄水位';
+        results.push(r_normal);
+    }
+
+    // 保存结果
+    window._results = results;
+
+    // 保存特征流量数据（供模块二消能防冲计算引用）
+    window.m1Results = [];
+    for (const t of targets) {
+        if (!t.val || t.val <= 0) continue;
+        const r = results.find(rr => rr.tag && rr.tag.includes(t.name));
+        if (r) {
+            window.m1Results.push({
+                label: t.name,
+                Q: r.Q,
+                upstreamLevel: r.upstreamWL,
+                hDown: dsWL,
+                hv: r.hv,
+                v0: r.v,
+                H0: r.H0,
+                hs: hs,
+                crestEL: crestEL,
+                g: g
+            });
+        }
+    }
+
+    // 正常蓄水位加入 m1Results
+    if (normalWL > crestEL) {
+        const rn = results.find(rr => rr.tag && rr.tag.includes('正常蓄水位'));
+        if (rn) {
+            window.m1Results.push({
+                label: '正常蓄水位',
+                Q: rn.Q,
+                upstreamLevel: rn.upstreamWL,
+                hDown: dsWL,
+                hv: rn.hv,
+                v0: rn.v,
+                H0: rn.H0,
+                hs: hs,
+                crestEL: crestEL,
+                g: g
+            });
+        }
+    }
+
+    // 渲染
+    renderTable(results);
+    renderDetail(results, { crestEL, Hd, P1, P2, n, b, B, dsWL, hs, vertical, slopeRatio, sidePierVal, midPier, Lu, useVel, Bc, g });
+}
+
+function findColIdx(rP) {
+    const cols = M_TABLE.cols;
+    if (rP <= cols[0]) return 0;
+    if (rP >= cols[cols.length-1]) return cols.length-1;
+    for (let i = 0; i < cols.length-1; i++) {
+        if (rP >= cols[i] && rP <= cols[i+1]) return i;
+    }
+    return cols.length-1;
+}
+
+// ============================================================
+//  渲染函数
+// ============================================================
+
+function renderTable(results) {
+    if (!results.length) {
+        document.getElementById('tableArea').innerHTML = '<div class="no-data"><div class="big-icon">📋</div><p>点击「计算」按钮查看结果</p></div>';
+        return;
+    }
+
+    let html = '<table><thead><tr>';
+    html += '<th>#</th><th>工况</th><th>上游水位 (m)</th><th>H (m)</th><th>H₀ (m)</th>';
+    html += '<th>m</th><th>C</th><th>ε</th><th>σ<sub>s</sub></th>';
+    html += '<th>行近流速 v (m/s)</th><th>流速水头 hv (m)</th><th>Q (m³/s)</th></tr></thead><tbody>';
+
+    const Qs = results.map(r => r.Q);
+    const maxQ = Math.max(...Qs);
+
+    results.forEach((r, i) => {
+        const isMax = r.Q === maxQ;
+        const isReverse = r.tag && r.tag.length > 0;
+        html += `<tr class="${isMax ? 'highlight' : ''}">
+            <td>${i+1}</td>
+            <td>${r.tag || '—'}</td>
+            <td>${r.upstreamWL.toFixed(2)}</td>
+            <td>${r.H.toFixed(2)}</td>
+            <td>${r.H0.toFixed(3)}</td>
+            <td class="val-m">${r.m.toFixed(4)}</td>
+            <td>${r.C.toFixed(4)}</td>
+            <td>${r.eps.toFixed(4)}</td>
+            <td class="val-sigma">${r.sigma.toFixed(4)}</td>
+            <td>${r.v.toFixed(3)}</td>
+            <td>${r.hv.toFixed(4)}</td>
+            <td class="val-q">${r.Q.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('tableArea').innerHTML = html;
+}
+
+// ============================================================
+//  计算过程 Tab
+// ============================================================
+
+function renderDetail(results, params) {
+    if (!results.length) {
+        document.getElementById('detailArea').innerHTML = '<div class="no-data"><div class="big-icon">📝</div><p>请先点击「计算」</p></div>';
+        return;
+    }
+
+    const r = results[results.length-1];
+    const H_r = r.H, H0_r = r.H0, m_r = r.m, C_r = r.C, eps_r = r.eps;
+    const sigma_r = r.sigma, v_r = r.v, hv_r = r.hv, Q_r = r.Q;
+    const g = params.g || 9.81;
+    const P1_Hd = (params.P1 / params.Hd).toFixed(4);
+    const H0_Hd = (H0_r / params.Hd).toFixed(4);
+
+    let html = `
+        <div style="background:#f7f9fc;border-radius:8px;padding:16px;border:1px solid #e8eef5;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:#0d3b66;margin-bottom:10px;">📐 工程参数</h3>
+            <table style="font-size:12.5px;width:100%;border-collapse:collapse;">
+                <tr><td style="padding:3px 10px;color:#5a6d80;width:150px;">堰顶高程</td><td style="padding:3px 10px;font-weight:600;">${params.crestEL.toFixed(2)} m</td>
+                    <td style="padding:3px 10px;color:#5a6d80;width:150px;">设计水头 H<sub>d</sub></td><td style="padding:3px 10px;font-weight:600;">${params.Hd.toFixed(2)} m</td></tr>
+                <tr><td style="padding:3px 10px;color:#5a6d80;">上游堰高 P<sub>1</sub></td><td style="padding:3px 10px;font-weight:600;">${params.P1.toFixed(2)} m</td>
+                    <td style="padding:3px 10px;color:#5a6d80;">下游堰高 P<sub>2</sub></td><td style="padding:3px 10px;font-weight:600;">${params.P2.toFixed(2)} m</td></tr>
+                <tr><td style="padding:3px 10px;color:#5a6d80;">闸孔数 n</td><td style="padding:3px 10px;font-weight:600;">${params.n}</td>
+                    <td style="padding:3px 10px;color:#5a6d80;">单孔净宽 b</td><td style="padding:3px 10px;font-weight:600;">${params.b.toFixed(2)} m</td></tr>
+                <tr><td style="padding:3px 10px;color:#5a6d80;">总净宽 B = n·b</td><td style="padding:3px 10px;font-weight:600;">${params.B.toFixed(2)} m</td>
+                    <td style="padding:3px 10px;color:#5a6d80;">下游水位</td><td style="padding:3px 10px;font-weight:600;">${params.dsWL.toFixed(2)} m</td></tr>
+                <tr><td style="padding:3px 10px;color:#5a6d80;">h<sub>s</sub> = 下游水位 − 堰顶</td><td style="padding:3px 10px;font-weight:600;">${params.hs.toFixed(2)} m</td>
+                    <td style="padding:3px 10px;color:#5a6d80;">上游河道宽 B<sub>c</sub></td><td style="padding:3px 10px;font-weight:600;">${params.Bc.toFixed(1)} m</td></tr>
+            </table>
+        </div>
+
+        <div style="background:#f7f9fc;border-radius:8px;padding:16px;border:1px solid #e8eef5;margin-bottom:14px;">
+            <h3 style="font-size:14px;color:#0d3b66;margin-bottom:10px;">📝 计算过程（以最高水位工况为例）</h3>
+            <table style="font-size:13px;width:100%;border-collapse:collapse;line-height:2.2;">
+                <tr><td style="padding:4px 10px;color:#5a6d80;width:50px;">①</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>堰顶水深</strong> H = 上游水位 − 堰顶高程 = ${r.upstreamWL.toFixed(3)} − ${params.crestEL.toFixed(2)} = <strong>${H_r.toFixed(4)} m</strong></td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">②</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>比值计算</strong>：H₀/H<sub>d</sub> = ${H0_r.toFixed(4)} / ${params.Hd.toFixed(2)} = <strong>${H0_Hd}</strong>，
+                    P₁/H<sub>d</sub> = ${params.P1.toFixed(2)} / ${params.Hd.toFixed(2)} = <strong>${P1_Hd}</strong></td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">③</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>流量系数</strong> m 由 H₀/H<sub>d</sub>、P₁/H<sub>d</sub> 双线性插值查WES表 = <strong>${m_r.toFixed(5)}</strong></td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">④</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>上游堰坡修正</strong> C = ${params.vertical === 'yes' ? '1.0（铅直）' : '查C值表'} = <strong>${C_r.toFixed(5)}</strong></td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">⑤</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>侧收缩系数</strong> ε = 1 − 0.2[ζ<sub>k</sub> + (n−1)ζ<sub>0</sub>](H₀/nb) = <strong>${eps_r.toFixed(5)}</strong></td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">⑥</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>淹没系数</strong> σ<sub>s</sub> = <strong>${sigma_r.toFixed(4)}</strong>（用户输入）</td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">⑦</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>过流流量</strong> Q = C·m·ε·σ<sub>s</sub>·B·√(2g)·H₀<sup>3/2</sup> = <strong>${Q_r.toFixed(4)} m³/s</strong></td></tr>
+                <tr><td style="padding:4px 10px;color:#5a6d80;">⑧</td>
+                    <td style="padding:4px 10px;color:#3d5166;"><strong>行近流速</strong> v = Q/(B<sub>c</sub>·H) = ${Q_r.toFixed(2)}/(${params.Bc.toFixed(1)}×${H_r.toFixed(4)}) = <strong>${v_r.toFixed(4)} m/s</strong><br>
+                    <span style="color:#8a9aa8;font-size:12px;">流速水头 hv = v²/2g = ${v_r.toFixed(4)}² / ${(2*g).toFixed(2)} = <strong>${hv_r.toFixed(5)} m</strong><br>
+                    H₀ = H + hv = ${H_r.toFixed(4)} + ${hv_r.toFixed(5)} = <strong>${H0_r.toFixed(4)} m</strong>（迭代收敛）</span></td></tr>
+            </table>
+        </div>
+
+        <div style="background:#f7f9fc;border-radius:8px;padding:16px;border:1px solid #e8eef5;">
+            <h3 style="font-size:14px;color:#0d3b66;margin-bottom:10px;">📋 核心公式</h3>
+            <div style="font-size:13px;line-height:2.2;color:#3d5166;">
+                <div><strong style="color:#0d3b66;">Q</strong> = C · m · ε · σ<sub>s</sub> · B · √(2g) · H₀<sup>3/2</sup></div>
+                <div><strong style="color:#0d3b66;">ε</strong> = 1 − 0.2[ζ<sub>k</sub> + (n−1)ζ<sub>0</sub>](H₀ / nb)</div>
+                <div><strong style="color:#0d3b66;">H</strong> = 上游水位 − 堰顶高程 &nbsp;|&nbsp; <strong>h<sub>s</sub></strong> = 下游水位 − 堰顶高程</div>
+                <div><strong style="color:#0d3b66;">v</strong> = Q / (B<sub>c</sub>·H) &nbsp;|&nbsp; <strong>h<sub>v</sub></strong> = v²/2g &nbsp;|&nbsp; <strong>H₀</strong> = H + h<sub>v</sub>（迭代收敛）</div>
+            </div>
+        </div>
+    `;
+    document.getElementById('detailArea').innerHTML = html;
+}
+
+// ============================================================
+//  模块切换
+// ============================================================
+
+function switchModule(moduleId) {
+    document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.module-btn[data-module="${moduleId}"]`).classList.add('active');
+    document.querySelectorAll('.module-content').forEach(c => c.style.display = 'none');
+    const el = document.getElementById(moduleId);
+    if (el) el.style.display = 'block';
+}
+
+// ============================================================
+//  Tab 切换
+
+// ============================================================
+//  Tab 切换
+// ============================================================
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
+
+// ============================================================
+//  重置参数（示例值）
+// ============================================================
+
+function resetParams() {
+    document.getElementById('crestEL').value = '100.0';
+    document.getElementById('Hd').value = '2.0';
+    document.getElementById('P1').value = '1.0';
+    document.getElementById('P2').value = '3.0';
+    document.getElementById('n').value = '2';
+    document.getElementById('b').value = '10.0';
+    document.getElementById('WLmin').value = '100.0';
+    document.getElementById('WLmax').value = '103.0';
+    document.getElementById('WLstep').value = '0.2';
+    document.getElementById('dsWL').value = '97';
+    document.getElementById('vertical').value = 'yes';
+    document.getElementById('slopeRatio').value = '3.0';
+    document.getElementById('sidePier').value = '1.0';
+    document.getElementById('midPier').value = 'round';
+    document.getElementById('Lu').value = '0';
+    document.getElementById('useVelocity').value = 'yes';
+    document.getElementById('Bc').value = '25';
+    document.getElementById('sigmaInput').value = '1.0';
+    document.getElementById('Qdesign').value = '400';
+    document.getElementById('Qcheck').value = '500';
+    document.getElementById('Qscour').value = '400';
+    document.getElementById('normalWL').value = '101.0';
+    toggleSlopeInput();
+}
+
+// ============================================================
+//  切换上游堰面坡度输入框的显隐
+// ============================================================
+
+function toggleSlopeInput() {
+    const isVertical = document.getElementById('vertical').value;
+    document.getElementById('slopeGroup').style.display = isVertical === 'yes' ? 'none' : 'block';
+}
+
+// ============================================================
+//  窗口大小变化时重绘图表
+// ============================================================
+
+// ============================================================
+//  消能防冲计算（模块二）
+// ============================================================
+
+
+// ---- 下游水位-流量关系曲线（模块二） ----
+let m4RatingCount = 0;
+let m4RatingInitDone = false;
+
+function addM4RatingRow(hVal, qVal) {
+    m4RatingCount++;
+    const area = document.getElementById('m4-rating-area');
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.id = 'm4-rating-row-' + m4RatingCount;
+    div.innerHTML = `
+        <span style="font-size:12px;color:#999;min-width:28px;">${m4RatingCount}</span>
+        <input class="m4-rh" placeholder="水位(m)" value="${hVal !== undefined ? hVal : ''}" type="number" step="0.01" style="padding:4px 8px;border:1px solid #dce3ec;border-radius:5px;width:110px;font-size:13px;">
+        <span style="color:#999;">→</span>
+        <input class="m4-rq" placeholder="流量(m³/s)" value="${qVal !== undefined ? qVal : ''}" type="number" step="0.1" style="padding:4px 8px;border:1px solid #dce3ec;border-radius:5px;width:120px;font-size:13px;">
+        <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+    `;
+    area.appendChild(div);
+}
+
+function initM4RatingRows() {
+    if (m4RatingInitDone) return;
+    // 默认数据（可根据实际工程修改）
+    const defaults = [
+        [97, 0], [98, 100], [99, 300]
+    ];
+    defaults.forEach(([h, q]) => addM4RatingRow(h, q));
+    m4RatingInitDone = true;
+}
+
+function clearM4RatingRows() {
+    document.getElementById('m4-rating-area').innerHTML = '';
+    m4RatingCount = 0;
+}
+
+function getM4RatingTable() {
+    const rows = document.querySelectorAll('#m4-rating-area .item');
+    const data = [];
+    rows.forEach(row => {
+        const h = parseFloat(row.querySelector('.m4-rh').value);
+        const q = parseFloat(row.querySelector('.m4-rq').value);
+        if (!isNaN(h) && !isNaN(q)) data.push([h, q]);
+    });
+    return data;
+}
+
+function toggleM4PasteArea() {
+    const area = document.getElementById('m4-paste-area');
+    area.style.display = area.style.display === 'block' ? 'none' : 'block';
+}
+
+function parseM4Paste() {
+    const text = document.getElementById('m4-paste-text').value.trim();
+    if (!text) { alert('粘贴内容为空！'); return; }
+    const lines = text.split(/[\r\n]+/).filter(s => s.trim().length > 0);
+    const data = [];
+    for (const line of lines) {
+        const parts = line.split(/[\t,，\s]+/).filter(s => s.length > 0);
+        if (parts.length >= 2) {
+            const h = parseFloat(parts[0]);
+            const q = parseFloat(parts[1]);
+            if (!isNaN(h) && !isNaN(q)) data.push([h, q]);
+        }
+    }
+    if (data.length < 2) { alert('有效数据不足2组，请检查格式（每行：水位 流量，用Tab或空格分隔）'); return; }
+    clearM4RatingRows();
+    data.forEach(([h, q]) => addM4RatingRow(h, q));
+    document.getElementById('m4-paste-text').value = '';
+    document.getElementById('m4-paste-area').style.display = 'none';
+    alert('成功导入 ' + data.length + ' 组水位-流量数据！');
+}
+
+/** 根据流量 Q 插值下游水位 */
+function getDownstreamWL(Q, ratingData) {
+    if (!ratingData || ratingData.length < 2) return null;
+    // 按流量排序
+    const sorted = [...ratingData].map(([h, q]) => [q, h]).sort((a, b) => a[0] - b[0]);
+    return linearInterp(Q, sorted);
+}
+
+function linearInterp(x, points) {
+    if (!points || points.length === 0) return null;
+    if (points.length === 1) return points[0][1];
+    if (x <= points[0][0]) return points[0][1];
+    if (x >= points[points.length-1][0]) return points[points.length-1][1];
+    for (let i = 0; i < points.length - 1; i++) {
+        if (x >= points[i][0] && x <= points[i+1][0]) {
+            const t = (x - points[i][0]) / (points[i+1][0] - points[i][0]);
+            return points[i][1] + t * (points[i+1][1] - points[i][1]);
+        }
+    }
+    return null;
+}
+
+const G = 9.81;
+
+/** 一、消力池深度计算 */
+function module4DepthCalc() {
+    const results = window._results;
+    if (!results || results.length < 2) {
+        alert('请先在模块一中完成计算！');
+        return;
+    }
+
+    const tailSill = parseFloat(document.getElementById('m4_tail').value);
+    const B = parseFloat(document.getElementById('m4_B_depth').value);
+    const alpha = parseFloat(document.getElementById('m4_alpha_d').value) || 1.0;
+    const phi = parseFloat(document.getElementById('m4_phi_d').value) || 0.95;
+    const sigma0 = parseFloat(document.getElementById('m4_sigma0').value) || 1.05;
+
+    if (isNaN(tailSill)) { alert('请输入消力池尾坎高程！'); return; }
+    if (isNaN(B) || B <= 0) { alert('请输入有效的消力池总宽度！'); return; }
+
+    const solveHc = function(T0, qVal) {
+        const C = alpha * qVal * qVal / (2 * G * phi * phi);
+        let h = 0.4 * T0;
+        for (let i = 0; i < 100; i++) {
+            const f = h * h * h - T0 * h * h + C;
+            const df = 3 * h * h - 2 * T0 * h;
+            if (Math.abs(f) < 1e-10) return h;
+            if (Math.abs(df) < 1e-10) break;
+            h = h - f / df;
+            if (h <= 0) { h = 0.001; break; }
+            if (h >= T0) h = T0 * 0.8;
+        }
+        return h;
+    };
+
+    const calcJumpH = function(hc, qVal) {
+        const Fr2 = alpha * qVal * qVal / (G * hc * hc * hc);
+        return hc / 2 * (Math.sqrt(1 + 8 * Fr2) - 1);
+    };
+
+    const calcDz = function(hc2, hsVal, qVal) {
+        const A = alpha * qVal * qVal / (2 * G);
+        const hsEff = Math.max(hsVal, 1.0);
+        return A * (1 / (phi * phi * hsEff * hsEff) - 1 / (hc2 * hc2));
+    };
+
+    // 从模块一读取下游水位
+    const ratingData = getM4RatingTable();
+    const crestEL = results[0].crestEL || 0;
+
+    let htmlRows = '';
+    let totalCount = 0;
+    let needCount = 0;
+    let hasDepthCount = 0;
+    let maxDPrime = 0;
+    const allRows = [];
+
+    results.forEach(r => {
+        const Q = r.Q;
+        if (Q <= 0) return;
+        // 跳过特征流量反算结果（设计洪水/校核洪水/消能防冲），只保留水位扫描数据
+        if (r.tag && r.tag.length > 0) return;
+
+        const q = Q / B;
+        // 根据流量插值下游水位，若无 rating data 则从模块一输入读取
+        let dsWL_used;
+        if (ratingData && ratingData.length >= 2) {
+            dsWL_used = getDownstreamWL(Q, ratingData);
+            if (dsWL_used === null) dsWL_used = parseFloat(document.getElementById('dsWL').value) || 0;
+        } else {
+            dsWL_used = parseFloat(document.getElementById('dsWL').value) || 0;
+        }
+        const h_s = Math.max(0, dsWL_used - tailSill);  // 下游水深 = 下游水位 − 尾坎高程
+
+        const H0 = r.H0 || 0;
+        const upstreamWL = r.upstreamWL || 0;
+
+        // 第1步：d'=0 计算
+        let T0 = H0 + crestEL - tailSill;
+        let hc = solveHc(T0, q);
+        let hc2 = calcJumpH(hc, q);
+        const needBasin = hc2 > h_s;
+        let d_prime = 0;
+        let dz = 0;
+
+        // 第2步：需要消力池时迭代求 d'
+        if (needBasin) {
+            let dg = 0;
+            for (let iter = 0; iter < 50; iter++) {
+                T0 = H0 + crestEL - tailSill + dg;
+                hc = solveHc(T0, q);
+                hc2 = calcJumpH(hc, q);
+                dz = calcDz(hc2, h_s, q);
+                const dn = sigma0 * hc2 - h_s - dz;
+                if (Math.abs(dn - dg) < 0.001) {
+                    d_prime = Math.max(0, dn);
+                    break;
+                }
+                dg = dn;
+                if (dg < 0) dg = 0;
+            }
+            T0 = H0 + crestEL - tailSill + d_prime;
+            hc = solveHc(T0, q);
+            hc2 = calcJumpH(hc, q);
+            dz = calcDz(hc2, h_s, q);
+            hasDepthCount++;
+        }
+
+        if (d_prime > maxDPrime) maxDPrime = d_prime;
+        needCount += needBasin ? 1 : 0;
+        totalCount++;
+
+        const tag = r.tag || (r.H ? 'H=' + r.H.toFixed(2) : '—');
+        allRows.push({ tag, Q, q, T0, hc, hc2, hs: h_s, needBasin, d_prime, upstreamWL, dsWL: dsWL_used });
+    });
+
+    // 渲染表格
+    allRows.forEach(row => {
+        const isMax = row.needBasin && row.d_prime > 0 && Math.abs(row.d_prime - maxDPrime) < 0.0001;
+        htmlRows += `<tr${isMax ? ' class="row-max"' : ''}>
+            <td>${row.tag}</td>
+            <td>${row.Q.toFixed(2)}</td>
+            <td>${row.q.toFixed(4)}</td>
+            <td>${row.upstreamWL.toFixed(3)}</td>
+            <td>${row.dsWL.toFixed(3)}</td>
+            <td>${row.T0.toFixed(4)}</td>
+            <td>${row.hc.toFixed(4)}</td>
+            <td>${row.hc2.toFixed(4)}</td>
+            <td>${row.hs.toFixed(3)}</td>
+            <td>${row.needBasin ? '<span style="color:#cc0000;font-weight:600;">需要</span>' : '<span style="color:#1a7a4c;">不需</span>'}</td>
+            <td>${row.needBasin ? row.d_prime.toFixed(3) : '—'}</td>
+        </tr>`;
+    });
+
+    if (totalCount === 0) {
+        alert('无可用的过流数据！请先在模块一中完成计算。');
+        return;
+    }
+
+    const html = `
+        <table class="m4-result-table">
+            <thead><tr>
+                <th>工况</th><th>Q (m³/s)</th><th>q (m³/s/m)</th>
+                <th>上游水位 (m)</th><th>下游水位 (m)</th><th>T₀ (m)</th>
+                <th>h<sub>c</sub> (m)</th><th>h<sub>c</sub>" (m)</th>
+                <th>h<sub>s</sub> (m)</th><th>需消力池?</th><th>d' (m)</th>
+            </tr></thead>
+            <tbody>${htmlRows}</tbody>
+        </table>
+        <div class="m4-result-foot">
+            共计算 <b>${totalCount}</b> 组工况，其中 <b style="color:#cc0000;">${needCount}</b> 组需要消力池，已求解池深 <b>${hasDepthCount}</b> 组。<br>
+            尾坎高程 = ${tailSill.toFixed(2)}m，消力池总宽度 B = ${B.toFixed(1)}m，σ₀ = ${sigma0.toFixed(2)}<br>
+            下游水位来自${ratingData && ratingData.length >= 2 ? '水位-流量关系曲线插值' : '模块一固定输入值'}<br>
+            标注<span class="row-max" style="padding:1px 6px;">红色行</span>为最大池深 d'<sub>max</sub> = <b>${maxDPrime.toFixed(3)}</b>m
+        </div>
+    `;
+    document.getElementById('m4-depth-table').innerHTML = html;
+    document.getElementById('m4-depth-result').style.display = 'block';
+}
+
+/** 更新 Ks 值（河床土质下拉变化时） */
+function updateKsValue() {
+    const sel = document.getElementById('m4_ks_select');
+    document.getElementById('m4_Ks').value = sel.value;
+}
+
+/** 一、消力池长度计算 */
+
+function module4DepthCalc2() {
+    const results = window._results;
+    if (!results || results.length < 2) {
+        alert('请先在模块一中完成计算！');
+        return;
+    }
+
+    const tailSill = parseFloat(document.getElementById('m4_tail').value);
+    const B = parseFloat(document.getElementById('m4_B_depth').value);
+    const alpha = parseFloat(document.getElementById('m4_alpha_d').value) || 1.0;
+    const phi = parseFloat(document.getElementById('m4_phi_d').value) || 0.95;
+    const sigma0 = parseFloat(document.getElementById('m4_sigma0').value) || 1.05;
+
+    if (isNaN(tailSill)) { alert('请输入消力池尾坎高程！'); return; }
+    if (isNaN(B) || B <= 0) { alert('请输入有效的消力池总宽度！'); return; }
+
+    const solveHc = function(T0, qVal) {
+        const C = alpha * qVal * qVal / (2 * G * phi * phi);
+        let h = 0.4 * T0;
+        for (let i = 0; i < 100; i++) {
+            const f = h * h * h - T0 * h * h + C;
+            const df = 3 * h * h - 2 * T0 * h;
+            if (Math.abs(f) < 1e-10) return h;
+            if (Math.abs(df) < 1e-10) break;
+            h = h - f / df;
+            if (h <= 0) { h = 0.001; break; }
+            if (h >= T0) h = T0 * 0.8;
+        }
+        return h;
+    };
+
+    const calcJumpH = function(hc, qVal) {
+        const Fr2 = alpha * qVal * qVal / (G * hc * hc * hc);
+        return hc / 2 * (Math.sqrt(1 + 8 * Fr2) - 1);
+    };
+
+    const calcDz = function(hc2, hsVal, qVal) {
+        const A = alpha * qVal * qVal / (2 * G);
+        const hsEff = Math.max(hsVal, 1.0);
+        return A * (1 / (phi * phi * hsEff * hsEff) - 1 / (hc2 * hc2));
+    };
+    // 查找模块一中正常蓄水位计算结果
+    const normalResult = results.find(r => r.tag && r.tag.includes('正常蓄水位'));
+    if (!normalResult) {
+        alert('请先在模块一中计算正常蓄水位对应的过流流量！');
+        return;
+    }
+
+    const Q_normal = normalResult.Q;
+    const H0_normal = normalResult.H0 || 0;
+    const upstreamWL_normal = normalResult.upstreamWL || 0;
+    const crestEL = normalResult.crestEL || results[0].crestEL || 0;
+
+    // 读取闸孔数目
+    const n = parseInt(document.getElementById('n').value) || 1;
+    const b = parseFloat(document.getElementById('b').value) || 1;
+    const groupCount = n * 6;
+
+    const ratingData = getM4RatingTable();
+
+    let htmlRows = '';
+    let totalCount = 0;
+    let needCount = 0;
+    let hasDepthCount = 0;
+    let maxDPrime = 0;
+    const allRows = [];
+
+    // 生成 N×6 组数据，每孔6级等差数列
+    for (let i = 0; i < groupCount; i++) {
+        const gateIdx = Math.floor(i / 6) + 1;          // 第几孔
+        const stepInGate = i % 6;                        // 该孔的第几级
+        const gateMaxQ = Q_normal / n;                    // 单孔最大流量
+        const Q = Math.round(gateMaxQ * (stepInGate + 1) / 6 * gateIdx);
+        if (Q <= 0) continue;
+
+        const q = Q / gateIdx / b;  // 单宽流量 = 流量 ÷ 孔数 ÷ 单孔净宽
+        let dsWL_used;
+        if (ratingData && ratingData.length >= 2) {
+            dsWL_used = getDownstreamWL(Q, ratingData);
+            if (dsWL_used === null) dsWL_used = parseFloat(document.getElementById('dsWL').value) || 0;
+        } else {
+            dsWL_used = parseFloat(document.getElementById('dsWL').value) || 0;
+        }
+        const h_s = Math.max(0, dsWL_used - tailSill);
+
+        let T0 = H0_normal + crestEL - tailSill;
+        let hc = solveHc(T0, q);
+        let hc2 = calcJumpH(hc, q);
+        const needBasin = hc2 > h_s;
+        let d_prime = 0;
+        let dz = 0;
+
+        if (needBasin) {
+            let dg = 0;
+            for (let iter = 0; iter < 50; iter++) {
+                T0 = H0_normal + crestEL - tailSill + dg;
+                hc = solveHc(T0, q);
+                hc2 = calcJumpH(hc, q);
+                dz = calcDz(hc2, h_s, q);
+                const dn = sigma0 * hc2 - h_s - dz;
+                if (Math.abs(dn - dg) < 0.001) {
+                    d_prime = Math.max(0, dn);
+                    break;
+                }
+                dg = dn;
+                if (dg < 0) dg = 0;
+            }
+            T0 = H0_normal + crestEL - tailSill + d_prime;
+            hc = solveHc(T0, q);
+            hc2 = calcJumpH(hc, q);
+            dz = calcDz(hc2, h_s, q);
+            hasDepthCount++;
+        }
+
+        if (d_prime > maxDPrime) maxDPrime = d_prime;
+        needCount += needBasin ? 1 : 0;
+        totalCount++;
+
+        const tag = gateIdx + '孔泄流 级' + (stepInGate + 1) + '/6（Q=' + Q + '）';
+        allRows.push({ tag, Q, q, T0, hc, hc2, hs: h_s, needBasin, d_prime, upstreamWL: upstreamWL_normal, dsWL: dsWL_used });
+    }
+
+    // 渲染表格
+    allRows.forEach(row => {
+        const isMax = row.needBasin && row.d_prime > 0 && Math.abs(row.d_prime - maxDPrime) < 0.0001;
+        htmlRows += `<tr${isMax ? ' class="row-max"' : ''}>
+            <td>${row.tag}</td>
+            <td>${row.Q.toFixed(2)}</td>
+            <td>${row.q.toFixed(4)}</td>
+            <td>${row.upstreamWL.toFixed(3)}</td>
+            <td>${row.dsWL.toFixed(3)}</td>
+            <td>${row.T0.toFixed(4)}</td>
+            <td>${row.hc.toFixed(4)}</td>
+            <td>${row.hc2.toFixed(4)}</td>
+            <td>${row.hs.toFixed(3)}</td>
+            <td>${row.needBasin ? '<span style="color:#cc0000;font-weight:600;">需要</span>' : '<span style="color:#1a7a4c;">不需</span>'}</td>
+            <td>${row.needBasin ? row.d_prime.toFixed(3) : '—'}</td>
+        </tr>`;
+    });
+
+    if (totalCount === 0) {
+        alert('无可用的过流数据！');
+        return;
+    }
+
+    const html = `
+        <table class="m4-result-table">
+            <thead><tr>
+                <th>工况</th><th>Q (m³/s)</th><th>q (m³/s/m)</th>
+                <th>上游水位 (m)</th><th>下游水位 (m)</th><th>T₀ (m)</th>
+                <th>h<sub>c</sub> (m)</th><th>h<sub>c</sub>" (m)</th>
+                <th>h<sub>s</sub> (m)</th><th>需消力池?</th><th>d' (m)</th>
+            </tr></thead>
+            <tbody>${htmlRows}</tbody>
+        </table>
+        <div class="m4-result-foot">
+            共计算 <b>${totalCount}</b> 组工况，其中 <b style="color:#cc0000;">${needCount}</b> 组需要消力池，已求解池深 <b>${hasDepthCount}</b> 组。<br>
+            正常蓄水位 = ${upstreamWL_normal.toFixed(2)}m，尾坎高程 = ${tailSill.toFixed(2)}m，B = ${B.toFixed(1)}m，σ₀ = ${sigma0.toFixed(2)}<br>
+            下游水位来自${ratingData && ratingData.length >= 2 ? '水位-流量关系曲线插值' : '模块一固定输入值'}<br>
+            标注<span class="row-max" style="padding:1px 6px;">红色行</span>为最大池深 d'<sub>max</sub> = <b>${maxDPrime.toFixed(3)}</b>m
+        </div>
+    `;
+    document.getElementById('m4-depth-table-2').innerHTML = html;
+    document.getElementById('m4-depth-result-2').style.display = 'block';
+}
+
+function module4LengthCalc() {
+    const m1 = window.m1Results;
+    if (!m1 || m1.length < 2) {
+        alert('请先在模块一中完成计算（需包含设计/校核/消能防冲三种特征流量）！');
+        return;
+    }
+
+    const B = parseFloat(document.getElementById('m4_B').value);
+    const d = parseFloat(document.getElementById('m4_d').value);
+    const beta = parseFloat(document.getElementById('m4_beta').value) || 0.7;
+    const alpha = parseFloat(document.getElementById('m4_alpha').value) || 1.0;
+    const phi = parseFloat(document.getElementById('m4_phi').value) || 0.95;
+    const ratingData = getM4RatingTable();
+
+    if (isNaN(B) || B <= 0) { alert('请输入有效的消力池总宽度！'); return; }
+    if (isNaN(d) || d < 0) { alert('请输入有效的拟定消力池深度！'); return; }
+
+    const solveHc = function(T0, qVal) {
+        const C = alpha * qVal * qVal / (2 * G * phi * phi);
+        let h = 0.4 * T0;
+        for (let i = 0; i < 100; i++) {
+            const f = h * h * h - T0 * h * h + C;
+            const df = 3 * h * h - 2 * T0 * h;
+            if (Math.abs(f) < 1e-10) return h;
+            if (Math.abs(df) < 1e-10) break;
+            h = h - f / df;
+            if (h <= 0) { h = 0.001; break; }
+            if (h >= T0) h = T0 * 0.8;
+        }
+        return h;
+    };
+
+    const calcJumpH = function(hc, qVal) {
+        const Fr2 = alpha * qVal * qVal / (G * hc * hc * hc);
+        return hc / 2 * (Math.sqrt(1 + 8 * Fr2) - 1);
+    };
+
+    const tailSill = parseFloat(document.getElementById('m4_tail').value);
+    if (isNaN(tailSill)) { alert('请输入消力池尾坎高程！'); return; }
+    let htmlRows = '';
+    m1.forEach(c => {
+        const Q = c.Q;
+        const q = Q / B;
+        // 根据流量插值下游水位
+        let dsWL_used;
+        if (ratingData && ratingData.length >= 2) {
+            dsWL_used = getDownstreamWL(Q, ratingData);
+            if (dsWL_used === null) dsWL_used = c.hDown;
+        } else {
+            dsWL_used = c.hDown;
+        }
+        const h_s = dsWL_used - tailSill;
+        const T0 = (c.upstreamLevel - tailSill) + c.hv + d;
+        const hc = solveHc(T0, q);
+        const hc2 = calcJumpH(hc, q);
+        const Lj = 6.9 * (hc2 - hc);
+        const L_gj = beta * Lj;
+        const deltaH = c.upstreamLevel - dsWL_used;
+
+        const isXiaoNeng = c.label === '消能防冲';
+        htmlRows += `<tr${isXiaoNeng ? ' class="row-max"' : ''}>
+            <td>${c.label}</td>
+            <td>${Q.toFixed(2)}</td>
+            <td>${q.toFixed(4)}</td>
+            <td>${c.upstreamLevel.toFixed(3)}</td>
+            <td>${T0.toFixed(4)}</td>
+            <td>${hc.toFixed(4)}</td>
+            <td>${hc2.toFixed(4)}</td>
+            <td>${Lj.toFixed(2)}</td>
+            <td><strong>${L_gj.toFixed(2)}</strong></td>
+        </tr>`;
+    });
+
+    const html = `
+        <table class="m4-result-table">
+            <thead><tr>
+                <th>工况</th><th>Q (m³/s)</th><th>q (m³/s/m)</th>
+                <th>上游水位 (m)</th><th>T₀ (m)</th>
+                <th>h<sub>c</sub> (m)</th><th>h<sub>c</sub>" (m)</th>
+                <th>L<sub>j</sub> (m)</th><th>L<sub>gj</sub> (m)</th>
+            </tr></thead>
+            <tbody>${htmlRows}</tbody>
+        </table>
+        <div class="m4-result-foot">
+            消力池总宽度 B = ${B.toFixed(1)}m，拟定池深 d = ${d.toFixed(2)}m，β = ${beta.toFixed(2)}<br>
+            T₀ = (上游水位 − 尾坎高程) + h<sub>v</sub> + d　｜　L<sub>gj</sub> = β·L<sub>j</sub><br>
+            下游水位来自${ratingData && ratingData.length >= 2 ? '水位-流量关系曲线插值' : '模块一计算结果'}
+        </div>
+    `;
+    document.getElementById('m4-length-table').innerHTML = html;
+    document.getElementById('m4-length-result').style.display = 'block';
+}
+
+/** 二、消力池抗冲计算（底板厚度） */
+function module4AntiScour() {
+    const m1 = window.m1Results;
+    if (!m1) { alert('请先运行模块一！'); return; }
+    const xiaoNeng = m1.find(c => c.label === '消能防冲');
+    if (!xiaoNeng) { alert('未找到消能防冲数据！'); return; }
+
+    const ratingData = getM4RatingTable();
+    let hDown_used;
+    if (ratingData && ratingData.length >= 2) {
+        hDown_used = getDownstreamWL(xiaoNeng.Q, ratingData);
+        if (hDown_used === null) hDown_used = xiaoNeng.hDown;
+    } else {
+        hDown_used = xiaoNeng.hDown;
+    }
+
+    const B = parseFloat(document.getElementById('m4_B_anti').value) || 25;
+    const k1 = parseFloat(document.getElementById('m4_k1').value) || 0.175;
+    const q = xiaoNeng.Q / B;
+    const deltaH = xiaoNeng.upstreamLevel - hDown_used;
+    const t = k1 * Math.sqrt(q) * Math.sqrt(deltaH);
+
+    document.getElementById('m4-anti-detail').innerHTML = `
+        <table class="m4-result-table" style="min-width:auto;">
+            <thead><tr><th>参数</th><th>公式/取值</th><th>数值</th><th>单位</th></tr></thead>
+            <tbody>
+                <tr><td>消能防冲流量 Q</td><td>给定值</td><td>${xiaoNeng.Q.toFixed(2)}</td><td>m³/s</td></tr>
+                <tr><td>消力池总宽度 B</td><td>输入值</td><td>${B.toFixed(1)}</td><td>m</td></tr>
+                <tr><td>单宽流量 q</td><td>Q/B</td><td>${q.toFixed(4)}</td><td>m³/s/m</td></tr>
+                <tr><td>上下游水位差 ΔH'</td><td>上游−下游</td><td>${deltaH.toFixed(3)}</td><td>m</td></tr>
+                <tr><td>抗冲系数 k₁</td><td>输入值</td><td>${k1.toFixed(3)}</td><td></td></tr>
+                <tr style="border-top:2px solid #0d3b66;font-weight:600;"><td>底板抗冲厚度 t</td><td>k₁·√q·√ΔH'</td><td class="m4-val">${t.toFixed(3)}</td><td>m</td></tr>
+            </tbody>
+        </table>
+        <div class="m4-result-foot">
+            上游水位 ${xiaoNeng.upstreamLevel.toFixed(3)}m，下游水位 ${hDown_used.toFixed(3)}m
+        </div>
+    `;
+    document.getElementById('m4-anti-result').style.display = 'block';
+}
+
+/** 三、海漫长度计算 */
+function module4Apron() {
+    const m1 = window.m1Results;
+    if (!m1) { alert('请先运行模块一！'); return; }
+    const xiaoNeng = m1.find(c => c.label === '消能防冲');
+    if (!xiaoNeng) { alert('未找到消能防冲数据！'); return; }
+
+    const ratingData = getM4RatingTable();
+    let hDown_used;
+    if (ratingData && ratingData.length >= 2) {
+        hDown_used = getDownstreamWL(xiaoNeng.Q, ratingData);
+        if (hDown_used === null) hDown_used = xiaoNeng.hDown;
+    } else {
+        hDown_used = xiaoNeng.hDown;
+    }
+
+    const B = parseFloat(document.getElementById('m4_B_apron').value) || 25;
+    const Ks = parseFloat(document.getElementById('m4_Ks').value) || 11.5;
+    const qs = xiaoNeng.Q / B;
+    const deltaH = xiaoNeng.upstreamLevel - hDown_used;
+    const Lp = Ks * Math.sqrt(qs * Math.sqrt(Math.max(deltaH, 0.01)));
+
+    document.getElementById('m4-apron-detail').innerHTML = `
+        <table class="m4-result-table" style="min-width:auto;">
+            <thead><tr><th>参数</th><th>公式/取值</th><th>数值</th><th>单位</th></tr></thead>
+            <tbody>
+                <tr><td>消能防冲流量 Q</td><td>给定值</td><td>${xiaoNeng.Q.toFixed(2)}</td><td>m³/s</td></tr>
+                <tr><td>消力池总宽度 B</td><td>输入值</td><td>${B.toFixed(1)}</td><td>m</td></tr>
+                <tr><td>末端单宽流量 q<sub>s</sub></td><td>Q/B</td><td>${qs.toFixed(4)}</td><td>m³/s/m</td></tr>
+                <tr><td>上下游水位差 ΔH'</td><td>上游−下游</td><td>${deltaH.toFixed(3)}</td><td>m</td></tr>
+                <tr><td>系数 K<sub>s</sub></td><td>按土质选取</td><td>${Ks.toFixed(1)}</td><td></td></tr>
+                <tr style="border-top:2px solid #0d3b66;font-weight:600;"><td>海漫长度 L<sub>p</sub></td><td>K<sub>s</sub>·√(q<sub>s</sub>·√ΔH')</td><td class="m4-val">${Lp.toFixed(2)}</td><td>m</td></tr>
+            </tbody>
+        </table>
+        <div class="m4-result-foot">
+            上游水位 ${xiaoNeng.upstreamLevel.toFixed(3)}m，下游水位 ${hDown_used.toFixed(3)}m
+        </div>
+    `;
+    document.getElementById('m4-apron-result').style.display = 'block';
+}
+
+/** 四、冲刷深度计算 */
+function module4Scour() {
+    const m1 = window.m1Results;
+    if (!m1) { alert('请先运行模块一！'); return; }
+    const xiaoNeng = m1.find(c => c.label === '消能防冲');
+    if (!xiaoNeng) { alert('未找到消能防冲数据！'); return; }
+
+    const ratingData = getM4RatingTable();
+    let hDown_used;
+    if (ratingData && ratingData.length >= 2) {
+        hDown_used = getDownstreamWL(xiaoNeng.Q, ratingData);
+        if (hDown_used === null) hDown_used = xiaoNeng.hDown;
+    } else {
+        hDown_used = xiaoNeng.hDown;
+    }
+
+    const apronEnd = parseFloat(document.getElementById('m4_apron_end').value);
+    const B = parseFloat(document.getElementById('m4_B_scour').value) || 25;
+    const v0_allowed = parseFloat(document.getElementById('m4_v0').value) || 0.8;
+
+    if (isNaN(apronEnd)) { alert('请输入海漫末端高程！'); return; }
+
+    const qm = xiaoNeng.Q / B;
+    const hm = hDown_used - apronEnd;
+    const dm = 1.1 * qm / v0_allowed - hm;
+
+    document.getElementById('m4-scour-detail').innerHTML = `
+        <table class="m4-result-table" style="min-width:auto;">
+            <thead><tr><th>参数</th><th>公式/取值</th><th>数值</th><th>单位</th></tr></thead>
+            <tbody>
+                <tr><td>消能防冲流量 Q</td><td>给定值</td><td>${xiaoNeng.Q.toFixed(2)}</td><td>m³/s</td></tr>
+                <tr><td>消力池总宽度 B</td><td>输入值</td><td>${B.toFixed(1)}</td><td>m</td></tr>
+                <tr><td>末端单宽流量 q<sub>m</sub></td><td>Q/B</td><td>${qm.toFixed(4)}</td><td>m³/s/m</td></tr>
+                <tr><td>下游水深 h<sub>m</sub></td><td>下游水位−海漫末端高程</td><td>${hm.toFixed(3)}</td><td>m</td></tr>
+                <tr><td>允许不冲流速 [v₀]</td><td>按地质条件选取</td><td>${v0_allowed.toFixed(2)}</td><td>m/s</td></tr>
+                <tr style="border-top:2px solid #0d3b66;font-weight:600;"><td>冲刷深度 d<sub>m</sub></td><td>1.1·q<sub>m</sub>/[v₀] − h<sub>m</sub></td><td class="m4-val">${dm.toFixed(3)}</td><td>m</td></tr>
+            </tbody>
+        </table>
+        <div class="m4-result-foot">
+            下游水位 ${hDown_used.toFixed(3)}m，海漫末端高程 ${apronEnd.toFixed(2)}m
+        </div>
+    `;
+    document.getElementById('m4-scour-result').style.display = 'block';
+}
+
+// ============================================================
+//  TXT 保存与载入（key=value 格式）
+// ============================================================
+
+window._loadModId = null;
+
+function saveInputsToTxt(modId) {
+    let lines = [];
+    const d = new Date();
+    const dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+    if (modId === 'm1') {
+        lines.push('# WES堰过流能力计算 输入数据');
+        lines.push('# 保存日期：' + dateStr);
+        lines.push('堰顶高程=' + (document.getElementById('crestEL')?.value||'') + 'm');
+        lines.push('设计水头Hd=' + (document.getElementById('Hd')?.value||'') + 'm');
+        lines.push('上游堰高P\u2081=' + (document.getElementById('P1')?.value||'') + 'm');
+        lines.push('下游堰高P\u2082=' + (document.getElementById('P2')?.value||'') + 'm');
+        lines.push('闸孔数目n=' + (document.getElementById('n')?.value||'') + '孔');
+        lines.push('单孔净宽b=' + (document.getElementById('b')?.value||'') + 'm');
+        lines.push('起始上游水位=' + (document.getElementById('WLmin')?.value||'') + 'm');
+        lines.push('终止上游水位=' + (document.getElementById('WLmax')?.value||'') + 'm');
+        lines.push('步长=' + (document.getElementById('WLstep')?.value||'') + 'm');
+        lines.push('下游水位=' + (document.getElementById('dsWL')?.value||'') + 'm');
+        const midPier = document.getElementById('midPier')?.value || 'round';
+        const pierMap = { rect: '矩形', round: '楔形或半圆形', sharp: '尖圆形' };
+        lines.push('中墩墩形=' + (pierMap[midPier] || midPier));
+        lines.push('边墩系数\u03b6k=' + (document.getElementById('sidePier')?.value||''));
+        lines.push('闸墩伸出长度Lu=' + (document.getElementById('Lu')?.value||'') + 'm');
+        const vert = document.getElementById('vertical')?.value || 'yes';
+        lines.push('上游堰面类型=' + (vert === 'yes' ? '铅直' : '倾斜'));
+        lines.push('斜坡坡度值=' + (vert === 'yes' ? '0（铅直）' : (document.getElementById('slopeRatio')?.value||'')));
+        lines.push('淹没系数\u03c3s=' + (document.getElementById('sigmaInput')?.value||''));
+        lines.push('考虑行近流速=' + (document.getElementById('useVelocity')?.value||'yes'));
+        lines.push('上游河道宽度Bc=' + (document.getElementById('Bc')?.value||'') + 'm');
+        lines.push('设计洪水Q设=' + (document.getElementById('Qdesign')?.value||'') + 'm\u00b3/s');
+        lines.push('校核洪水Q校=' + (document.getElementById('Qcheck')?.value||'') + 'm\u00b3/s');
+        lines.push('消能防冲Q消=' + (document.getElementById('Qscour')?.value||'') + 'm\u00b3/s');
+        lines.push('正常蓄水位=' + (document.getElementById('normalWL')?.value||'') + 'm');
+    } else if (modId === 'm2') {
+        lines.push('# 消能防冲计算 输入数据');
+        lines.push('# 保存日期：' + dateStr);
+        lines.push('消力池尾坎高程=' + (document.getElementById('m4_tail')?.value||'') + 'm');
+        lines.push('消力池总宽度B_深度=' + (document.getElementById('m4_B_depth')?.value||'') + 'm');
+        lines.push('动能校正系数\u03b1=' + (document.getElementById('m4_alpha_d')?.value||''));
+        lines.push('流速系数\u03c6=' + (document.getElementById('m4_phi_d')?.value||''));
+        lines.push('水跃淹没系数\u03c30=' + (document.getElementById('m4_sigma0')?.value||''));
+        lines.push('下游消力池总宽度B=' + (document.getElementById('m4_B')?.value||'') + 'm');
+        lines.push('拟定消力池深度d=' + (document.getElementById('m4_d')?.value||'') + 'm');
+        lines.push('校正系数\u03b2=' + (document.getElementById('m4_beta')?.value||''));
+        lines.push('动能校正系数\u03b1_长度=' + (document.getElementById('m4_alpha')?.value||''));
+        lines.push('流速系数\u03c6_长度=' + (document.getElementById('m4_phi')?.value||''));
+        lines.push('抗冲系数k\u2081=' + (document.getElementById('m4_k1')?.value||''));
+        lines.push('消力池总宽度B_抗冲=' + (document.getElementById('m4_B_anti')?.value||'') + 'm');
+        lines.push('河床土质Ks选择=' + (document.getElementById('m4_ks_select')?.value||''));
+        lines.push('海漫系数Ks=' + (document.getElementById('m4_Ks')?.value||''));
+        lines.push('消力池总宽度B_海漫=' + (document.getElementById('m4_B_apron')?.value||'') + 'm');
+        lines.push('海漫末端高程=' + (document.getElementById('m4_apron_end')?.value||'') + 'm');
+        lines.push('允许不冲流速v0=' + (document.getElementById('m4_v0')?.value||'') + 'm/s');
+        lines.push('消力池总宽度B_冲刷=' + (document.getElementById('m4_B_scour')?.value||'') + 'm');
+
+        // rating table
+        const ratingData = getM4RatingTable();
+        if (ratingData && ratingData.length > 0) {
+            lines.push('');
+            lines.push('[下游水位-流量关系表]');
+            ratingData.forEach(([h, q]) => {
+                lines.push(h + '\t' + q);
+            });
+        }
+    }
+
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/plain;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (modId === 'm1' ? 'WES堰过流能力_输入数据.txt' : '消能防冲计算_输入数据.txt');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+function loadInputsFromTxt(modId) {
+    window._loadModId = modId;
+    document.getElementById('file-input-hidden').click();
+}
+
+function handleFileLoad(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const modId = window._loadModId || 'm1';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split(/[\r\n]+/);
+        const kvMap = {};
+        let inRating = false;
+        const ratingLines = [];
+        for (let line of lines) {
+            line = line.trim();
+            if (!line || line.startsWith('#')) continue;
+            if (line === '[下游水位-流量关系表]') { inRating = true; continue; }
+            if (inRating) {
+                const parts = line.split(/\t|\s{2,}/);
+                if (parts.length >= 2) ratingLines.push(parts.slice(0, 2));
+                continue;
+            }
+            const eqIdx = line.indexOf('=');
+            if (eqIdx > 0) {
+                const key = line.substring(0, eqIdx).trim();
+                const val = line.substring(eqIdx + 1).trim().replace(/[m³/s孔]+$/,'').replace(/m\/s$/,'').replace(/m$/,'').trim();
+                kvMap[key] = val;
+            }
+        }
+
+        const setVal = (id, key) => {
+            if (kvMap[key] !== undefined && document.getElementById(id)) {
+                document.getElementById(id).value = kvMap[key];
+            }
+        };
+        const setSelect = (id, key, map) => {
+            if (kvMap[key] !== undefined && document.getElementById(id)) {
+                const v = kvMap[key];
+                if (map && map[v]) { document.getElementById(id).value = map[v]; }
+                else { document.getElementById(id).value = v; }
+            }
+        };
+
+        if (modId === 'm1') {
+            setVal('crestEL', '堰顶高程');
+            setVal('Hd', '设计水头Hd');
+            setVal('P1', '上游堰高P\u2081');
+            setVal('P2', '下游堰高P\u2082');
+            setVal('n', '闸孔数目n');
+            setVal('b', '单孔净宽b');
+            setVal('WLmin', '起始上游水位');
+            setVal('WLmax', '终止上游水位');
+            setVal('WLstep', '步长');
+            setVal('dsWL', '下游水位');
+            const pierRevMap = { '矩形': 'rect', '楔形或半圆形': 'round', '尖圆形': 'sharp' };
+            setSelect('midPier', '中墩墩形', pierRevMap);
+            setVal('sidePier', '边墩系数\u03b6k');
+            setVal('Lu', '闸墩伸出长度Lu');
+            if (kvMap['上游堰面类型'] !== undefined) {
+                const vt = kvMap['上游堰面类型'];
+                document.getElementById('vertical').value = (vt === '铅直' || vt === 'yes') ? 'yes' : 'no';
+                toggleSlopeInput();
+            }
+            if (kvMap['斜坡坡度值'] !== undefined && kvMap['斜坡坡度值'] !== '0（铅直）') {
+                setVal('slopeRatio', '斜坡坡度值');
+            }
+            setVal('sigmaInput', '淹没系数\u03c3s');
+            if (kvMap['考虑行近流速'] !== undefined) {
+                document.getElementById('useVelocity').value = kvMap['考虑行近流速'];
+            }
+            setVal('Bc', '上游河道宽度Bc');
+            setVal('Qdesign', '设计洪水Q设');
+            setVal('Qcheck', '校核洪水Q校');
+            setVal('Qscour', '消能防冲Q消');
+            setVal('normalWL', '正常蓄水位');
+            alert('模块一输入参数已从TXT载入！');
+        } else if (modId === 'm2') {
+            setVal('m4_tail', '消力池尾坎高程');
+            setVal('m4_B_depth', '消力池总宽度B_深度');
+            setVal('m4_alpha_d', '动能校正系数\u03b1');
+            setVal('m4_phi_d', '流速系数\u03c6');
+            setVal('m4_sigma0', '水跃淹没系数\u03c30');
+            setVal('m4_B', '下游消力池总宽度B');
+            setVal('m4_d', '拟定消力池深度d');
+            setVal('m4_beta', '校正系数\u03b2');
+            setVal('m4_alpha', '动能校正系数\u03b1_长度');
+            setVal('m4_phi', '流速系数\u03c6_长度');
+            setVal('m4_k1', '抗冲系数k\u2081');
+            setVal('m4_B_anti', '消力池总宽度B_抗冲');
+            setVal('m4_ks_select', '河床土质Ks选择');
+            setVal('m4_Ks', '海漫系数Ks');
+            setVal('m4_B_apron', '消力池总宽度B_海漫');
+            setVal('m4_apron_end', '海漫末端高程');
+            setVal('m4_v0', '允许不冲流速v0');
+            setVal('m4_B_scour', '消力池总宽度B_冲刷');
+
+            // Load rating table
+            if (ratingLines.length > 0) {
+                clearM4RatingRows();
+                ratingLines.forEach(([h, q]) => addM4RatingRow(parseFloat(h), parseFloat(q)));
+            }
+            alert('模块二输入参数已从TXT载入！');
+        }
+    };
+    reader.readAsText(file, 'UTF-8');
+    event.target.value = '';
+}
+
+// ============================================================
+//  Word 计算书导出（动态加载 docx.js）
+// ============================================================
+
+let docxLoadPromise = null;
+function ensureDocx() {
+    if (typeof docx !== 'undefined') return Promise.resolve();
+    if (docxLoadPromise) return docxLoadPromise;
+    docxLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/docx@8.5.0/build/index.umd.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Word组件加载失败，请检查网络连接'));
+        document.head.appendChild(script);
+    });
+    return docxLoadPromise;
+}
+
+function makeA4Section() {
+    return { properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } } } };
+}
+function makeTable(rows, colWidths) {
+    return new docx.Table({
+        width: { size: 100, type: docx.WidthType.PERCENTAGE },
+        columnWidths: colWidths || undefined,
+        rows: rows.map(row => new docx.TableRow({
+            children: row.map((cell, ci) => new docx.TableCell({
+                width: colWidths ? { size: colWidths[ci], type: docx.WidthType.DXA } : undefined,
+                children: [new docx.Paragraph({ alignment: ci === 0 ? docx.AlignmentType.LEFT : docx.AlignmentType.CENTER, spacing: { before: 40, after: 40 }, children: [new docx.TextRun({ text: String(cell), size: 20, font: '宋体' })] })]
+            }))
+        }))
+    });
+}
+function makeHeading(text, level) {
+    return new docx.Paragraph({ heading: level || docx.HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 }, children: [new docx.TextRun({ text, bold: true, size: level === docx.HeadingLevel.HEADING_1 ? 32 : 26, font: '黑体' })] });
+}
+function makePara(text, options) {
+    return new docx.Paragraph({ spacing: { before: 60, after: 60 }, alignment: (options && options.align) || docx.AlignmentType.LEFT, children: [new docx.TextRun({ text, size: (options && options.size) || 21, font: (options && options.font) || '宋体', bold: !!(options && options.bold), italics: !!(options && options.italics) })] });
+}
+async function saveDocx(doc, filename) {
+    const buffer = await docx.Packer.toBlob(doc);
+    const url = URL.createObjectURL(buffer);
+    const a = document.createElement('a'); a.download = filename; a.href = url; a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  模块一 Word 计算书导出
+// ============================================================
+async function exportModule1ToWord() {
+    try { await ensureDocx(); } catch(e) { alert(e.message); return; }
+
+    const g = 9.81;
+    const crestEL = parseFloat(document.getElementById('crestEL').value);
+    const Hd = parseFloat(document.getElementById('Hd').value);
+    const P1 = parseFloat(document.getElementById('P1').value);
+    const P2 = parseFloat(document.getElementById('P2').value);
+    const n = parseInt(document.getElementById('n').value);
+    const b = parseFloat(document.getElementById('b').value);
+    const WLmin = parseFloat(document.getElementById('WLmin').value);
+    const WLmax = parseFloat(document.getElementById('WLmax').value);
+    const WLstep = parseFloat(document.getElementById('WLstep').value);
+    const dsWL = parseFloat(document.getElementById('dsWL').value);
+    const sigma = parseFloat(document.getElementById('sigmaInput').value);
+    const B0 = n * b;
+    const Bc = parseFloat(document.getElementById('Bc').value);
+    const P1_Hd = P1 / Hd;
+    const vert = document.getElementById('vertical').value;
+    const slopeRatio = parseFloat(document.getElementById('slopeRatio').value) || 0;
+    const useVel = document.getElementById('useVelocity').value === 'yes';
+
+    const children = [];
+
+    // Title
+    children.push(new docx.Paragraph({ spacing: { before: 600, after: 200 }, alignment: docx.AlignmentType.CENTER, children: [new docx.TextRun({ text: 'WES堰过流能力计算书', bold: true, size: 36, font: '黑体' })] }));
+    children.push(new docx.Paragraph({ spacing: { before: 100, after: 400 }, alignment: docx.AlignmentType.CENTER, children: [new docx.TextRun({ text: '版本 2.2   2026年7月10日', size: 20, font: '宋体', color: '888888' })] }));
+
+    // 一、输入参数
+    children.push(makeHeading('一、输入参数表', docx.HeadingLevel.HEADING_1));
+    children.push(makeTable([
+        ['参数名称', '符号', '数值', '单位'],
+        ['堰顶高程', 'Z\u2092', crestEL.toFixed(2), 'm'],
+        ['设计水头', 'Hd', Hd.toFixed(2), 'm'],
+        ['上游堰高', 'P\u2081', P1.toFixed(2), 'm'],
+        ['下游堰高', 'P\u2082', P2.toFixed(2), 'm'],
+        ['闸孔数目', 'n', String(n), '孔'],
+        ['单孔净宽', 'b', b.toFixed(2), 'm'],
+        ['总净宽', 'B\u2080=n\u00d7b', B0.toFixed(2), 'm'],
+        ['上游水位范围', 'WL', WLmin.toFixed(2) + ' ~ ' + WLmax.toFixed(2), 'm'],
+        ['水位步长', '\u0394WL', WLstep.toFixed(2), 'm'],
+        ['下游水位', 'Z\u2097', dsWL.toFixed(2), 'm'],
+        ['淹没系数', '\u03c3s', sigma.toFixed(3), ''],
+        ['上游堰面类型', '', vert === 'yes' ? '铅直(C=1.0)' : '倾斜\u0394y/\u0394x=' + slopeRatio.toFixed(1), ''],
+        ['上游河道宽度', 'Bc', Bc.toFixed(1), 'm'],
+        ['考虑行近流速', '', useVel ? '是' : '否', ''],
+    ], [2000, 2000, 2000, 2000]));
+
+    // 二、基础计算
+    children.push(makeHeading('二、基础计算', docx.HeadingLevel.HEADING_1));
+    children.push(makePara('公式：B\u2080 = n \u00d7 b'));
+    children.push(makePara('代入：B\u2080 = ' + n + ' \u00d7 ' + b.toFixed(1) + ' = ' + B0.toFixed(2) + ' m'));
+    children.push(makePara('结果：闸孔总净宽 B\u2080 = ' + B0.toFixed(2) + ' m'));
+    children.push(makePara(''));
+    children.push(makePara('公式：P\u2081/Hd'));
+    children.push(makePara('代入：P\u2081/Hd = ' + P1.toFixed(2) + ' / ' + Hd.toFixed(2) + ' = ' + P1_Hd.toFixed(3)));
+    children.push(makePara('结果：P\u2081/Hd = ' + P1_Hd.toFixed(3)));
+    children.push(makePara(''));
+    children.push(makePara('收缩比 = B\u2080 / Bc = ' + B0.toFixed(2) + ' / ' + Bc.toFixed(2) + ' = ' + (B0/Bc).toFixed(3)));
+    children.push(makePara('（闸孔总净宽 B\u2080=' + B0.toFixed(2) + 'm，上游河道宽度 Bc=' + Bc.toFixed(2) + 'm）'));
+
+    // 三、计算公式
+    children.push(makeHeading('三、计算公式', docx.HeadingLevel.HEADING_1));
+    children.push(makePara('3.1 WES实用堰过流能力基本公式', { bold: true }));
+    children.push(makePara('    Q = C \u00b7 m \u00b7 \u03b5 \u00b7 \u03c3s \u00b7 B\u2080 \u00b7 \u221a(2g) \u00b7 H\u2080^(3/2)'));
+    children.push(makePara(''));
+    children.push(makePara('3.2 流量系数 m', { bold: true }));
+    children.push(makePara('    由 H\u2080/Hd 与 P\u2081/Hd 双线性插值 WES 实用堰流量系数表（SL 265-2016 表A.0.2-1）确定'));
+    children.push(makePara(''));
+    children.push(makePara('3.3 上游堰坡影响修正系数 C', { bold: true }));
+    children.push(makePara('    铅直堰面（\u0394y/\u0394x = 0）：C = 1.000'));
+    children.push(makePara('    倾斜堰面：由 \u0394y/\u0394x 与 P\u2081/Hd 查表（SL 265-2016 表A.0.2-2）确定'));
+    children.push(makePara(''));
+    children.push(makePara('3.4 侧收缩系数 \u03b5（SL 265-2016 公式A.0.1-3/A.0.1-4）', { bold: true }));
+    children.push(makePara('    \u03b5 = 1 \u2212 0.2 \u00d7 [\u03b6k + (n\u22121)\u00b7\u03b60] \u00d7 (H\u2080 / nb)'));
+    children.push(makePara('    其中 \u03b60 = 墩形系数（查表A.0.1-1），\u03b6k = 边墩系数（查表A.0.1-2）'));
+    children.push(makePara(''));
+    children.push(makePara('3.5 淹没系数 \u03c3s', { bold: true }));
+    children.push(makePara('    由 hs/H\u2080 和 P\u2082/H\u2080 查 WES 堰淹没曲线确定'));
+    children.push(makePara('    当 hs/H\u2080 \u2264 0.15 时，\u03c3s = 1.0（自由出流）'));
+    children.push(makePara(''));
+    children.push(makePara('3.6 行近流速与总水头（迭代求解）', { bold: true }));
+    children.push(makePara('    v\u2080^(0) = Q / (Bc \u00d7 (P\u2081+H))'));
+    children.push(makePara('    hv^(k) = v\u2080\u00b2 / (2g)'));
+    children.push(makePara('    H\u2080^(k+1) = H + hv^(k)'));
+    children.push(makePara('    迭代至 |H\u2080^(k+1) \u2212 H\u2080^(k)| < 0.001 且 |Q^(k+1) \u2212 Q^(k)| < 0.001'));
+
+    // 四、计算结果
+    const results = window._results;
+    if (results && results.length > 0) {
+        children.push(makeHeading('四、计算结果表', docx.HeadingLevel.HEADING_1));
+        const headerRow = ['序号', '上游水位(m)', 'H(m)', 'H\u2080(m)', 'm', 'C', '\u03b5', '\u03c3s', 'v(m/s)', 'Q(m\u00b3/s)'];
+        const dataRows = results.map((r, i) => [
+            String(i+1), r.upstreamWL.toFixed(3), r.H.toFixed(4), r.H0.toFixed(4),
+            r.m.toFixed(5), r.C.toFixed(5), r.eps.toFixed(5), r.sigma.toFixed(5),
+            r.v.toFixed(4), r.Q.toFixed(4)
+        ]);
+        children.push(makeTable([headerRow, ...dataRows]));
+
+        // 五、详细计算过程 - 第一组水位
+        children.push(makeHeading('五、详细计算过程（取第一组上游水位展开）', docx.HeadingLevel.HEADING_1));
+        const r = results[0];
+        const zeta_k = parseFloat(document.getElementById('sidePier').value) || 0.7;
+        const hs_val = parseFloat(document.getElementById('dsWL').value) - crestEL;
+        const hsH0_val = hs_val / r.H0;
+        const flowRegime = (hsH0_val <= 0.15) ? '自由出流' : (r.sigma < 1.0 ? '淹没出流' : '自由出流');
+
+        children.push(makePara('【上游水位 WL = ' + r.upstreamWL.toFixed(3) + ' m】', { bold: true }));
+        children.push(makePara(''));
+
+        // 步骤1
+        children.push(makePara('步骤1：堰顶水深 H', { bold: true }));
+        children.push(makePara('  公式：H = WL \u2212 堰顶高程'));
+        children.push(makePara('  代入：H = ' + r.upstreamWL.toFixed(3) + ' \u2212 ' + crestEL.toFixed(2)));
+        children.push(makePara('  结果：H = ' + r.H.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 步骤2
+        children.push(makePara('步骤2：流量系数 m', { bold: true }));
+        children.push(makePara('  公式：由 H\u2080/Hd 和 P\u2081/Hd 查 WES 流量系数表（双线性插值）'));
+        children.push(makePara('  代入：H\u2080/Hd = ' + r.H0.toFixed(4) + ' / ' + Hd.toFixed(2) + ' = ' + (r.H0/Hd).toFixed(4)));
+        children.push(makePara('         P\u2081/Hd = ' + P1_Hd.toFixed(3)));
+        children.push(makePara('  结果：m = ' + r.m.toFixed(5) + '（双线性插值）'));
+        children.push(makePara(''));
+
+        // 步骤3
+        children.push(makePara('步骤3：上游堰坡修正系数 C', { bold: true }));
+        children.push(makePara('  公式：C 由 \u0394y/\u0394x 与 P\u2081/Hd 查表'));
+        children.push(makePara('  代入：\u0394y/\u0394x = ' + (vert === 'yes' ? '0（铅直）' : slopeRatio.toFixed(1)) + '，P\u2081/Hd = ' + P1_Hd.toFixed(3)));
+        children.push(makePara('  结果：C = ' + r.C.toFixed(5)));
+        children.push(makePara(''));
+
+        // 步骤4
+        children.push(makePara('步骤4：侧收缩系数 \u03b5', { bold: true }));
+        children.push(makePara('  公式：\u03b5 = 1 \u2212 0.2 \u00d7 [\u03b6k + (n\u22121)\u00b7\u03b60] \u00d7 (H\u2080 / nb)'));
+        children.push(makePara('  代入：\u03b5 = 1 \u2212 0.2 \u00d7 [' + zeta_k.toFixed(3) + ' + (' + n + '\u22121)\u00d7' + r.zeta0.toFixed(3) + '] \u00d7 (' + r.H0.toFixed(4) + ' / (' + n + '\u00d7' + b.toFixed(1) + '))'));
+        children.push(makePara('        = 1 \u2212 0.2 \u00d7 [' + zeta_k.toFixed(3) + ' + ' + (n-1) + '\u00d7' + r.zeta0.toFixed(3) + '] \u00d7 ' + (r.H0/(n*b)).toFixed(4)));
+        children.push(makePara('  结果：\u03b5 = ' + r.eps.toFixed(5)));
+        children.push(makePara(''));
+
+        // 步骤5
+        children.push(makePara('步骤5：淹没系数 \u03c3s', { bold: true }));
+        children.push(makePara('  公式：\u03c3s 由 hs/H\u2080 和 P\u2082/H\u2080 查 WES 堰淹没曲线'));
+        children.push(makePara('  代入：hs/H\u2080 = ' + hs_val.toFixed(3) + ' / ' + r.H0.toFixed(4) + ' = ' + hsH0_val.toFixed(4)));
+        children.push(makePara('        hs/H\u2080 ' + (hsH0_val <= 0.15 ? '\u2264 0.15，判定为自由出流' : '> 0.15，查淹没曲线')));
+        children.push(makePara('  结果：\u03c3s = ' + r.sigma.toFixed(4) + '（' + flowRegime + '）'));
+        children.push(makePara(''));
+
+        // 步骤6
+        children.push(makePara('步骤6：行近流速 v\u2080 与总水头 H\u2080（迭代计算）', { bold: true }));
+        children.push(makePara('  公式：v\u2080 = Q / (Bc \u00d7 (P\u2081+H))'));
+        children.push(makePara('  代入：v\u2080 = ' + r.Q.toFixed(4) + ' / (' + Bc.toFixed(1) + ' \u00d7 (' + P1.toFixed(2) + '+' + r.H.toFixed(4) + '))'));
+        children.push(makePara('        = ' + r.Q.toFixed(4) + ' / ' + (Bc*(P1+r.H)).toFixed(3) + ' = ' + r.v.toFixed(4) + ' m/s'));
+        children.push(makePara('  公式：hv = v\u2080\u00b2 / (2g)'));
+        children.push(makePara('  代入：hv = ' + r.v.toFixed(4) + '\u00b2 / (2\u00d7' + g.toFixed(2) + ') = ' + r.hv.toFixed(5) + ' m'));
+        children.push(makePara('  公式：H\u2080 = H + hv'));
+        children.push(makePara('  代入：H\u2080 = ' + r.H.toFixed(4) + ' + ' + r.hv.toFixed(5) + ' = ' + r.H0.toFixed(4) + ' m'));
+        children.push(makePara('  结果：v\u2080 = ' + r.v.toFixed(4) + ' m/s，hv = ' + r.hv.toFixed(5) + ' m，H\u2080 = ' + r.H0.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 步骤7
+        children.push(makePara('步骤7：流量 Q 验证', { bold: true }));
+        children.push(makePara('  公式：Q = C \u00b7 m \u00b7 \u03b5 \u00b7 \u03c3s \u00b7 B\u2080 \u00b7 \u221a(2g) \u00b7 H\u2080^(3/2)'));
+        children.push(makePara('  代入：Q = ' + r.C.toFixed(5) + ' \u00d7 ' + r.m.toFixed(5) + ' \u00d7 ' + r.eps.toFixed(5) + ' \u00d7 ' + r.sigma.toFixed(4) + ' \u00d7 ' + B0.toFixed(2) + ' \u00d7 \u221a(2\u00d7' + g.toFixed(2) + ') \u00d7 ' + r.H0.toFixed(4) + '^(3/2)'));
+        children.push(makePara('  结果：Q = ' + r.Q.toFixed(4) + ' m\u00b3/s'));
+
+        // 六、特征流量反算结果
+        const m1 = window.m1Results;
+        if (m1 && m1.length > 0) {
+            children.push(makePara(''));
+            children.push(makeHeading('六、特征流量反算结果', docx.HeadingLevel.HEADING_1));
+            m1.forEach(function(mr) {
+                const mr_H = mr.upstreamLevel - crestEL;
+                const mr_H0_Hd = mr.H0 / Hd;
+                children.push(makePara('【' + mr.label + '】', { bold: true }));
+                children.push(makePara('  公式：由目标流量 Q_target = ' + mr.Q.toFixed(2) + ' m\u00b3/s 反算上游水头'));
+                children.push(makePara('  代入：二分法搜索 H，收敛条件 |Q_calc \u2212 Q_target| < 0.001 m\u00b3/s'));
+                children.push(makePara('  结果：上游水位 = ' + mr.upstreamLevel.toFixed(3) + ' m'));
+                children.push(makePara('         堰顶水深 H = ' + mr_H.toFixed(4) + ' m'));
+                children.push(makePara('         总水头 H\u2080 = ' + mr.H0.toFixed(4) + ' m'));
+                children.push(makePara('         H\u2080/Hd = ' + mr_H0_Hd.toFixed(4)));
+                children.push(makePara('         行近流速 v = ' + mr.v0.toFixed(4) + ' m/s'));
+                children.push(makePara('         流速水头 hv = ' + mr.hv.toFixed(5) + ' m'));
+                children.push(makePara(''));
+                children.push(makePara('  验证：Q = ' + mr.Q.toFixed(4) + ' m\u00b3/s'));
+            });
+        }
+    } else {
+        children.push(makeHeading('四、计算结果', docx.HeadingLevel.HEADING_1));
+        children.push(makePara('尚未进行计算，请在页面中点击"计算"按钮后再导出。'));
+    }
+
+    const doc = new docx.Document({ sections: [{ ...makeA4Section(), children }] });
+    await saveDocx(doc, 'WES堰过流能力计算书.docx');
+}
+
+// ============================================================
+//  模块二 Word 计算书导出
+// ============================================================
+async function exportModule2ToWord() {
+    try { await ensureDocx(); } catch(e) { alert(e.message); return; }
+
+    const g = 9.81;
+    const m1 = window.m1Results;
+    const getVal = (id, def) => { const el = document.getElementById(id); if (!el || el.value==='') return def; const v = parseFloat(el.value); return isNaN(v) ? def : v; };
+    const tailSill = getVal('m4_tail', 97);
+    const B_depth = getVal('m4_B_depth', 25);
+    const alpha_d = getVal('m4_alpha_d', 1.0);
+    const phi_d = getVal('m4_phi_d', 0.95);
+    const sigma0 = getVal('m4_sigma0', 1.05);
+    const B_len = getVal('m4_B', 25);
+    const d_pool = getVal('m4_d', 1.5);
+    const beta = getVal('m4_beta', 0.7);
+    const alpha = getVal('m4_alpha', 1.0);
+    const phi = getVal('m4_phi', 0.95);
+    const k1 = getVal('m4_k1', 0.175);
+    const B_anti = getVal('m4_B_anti', 25);
+    const Ks = getVal('m4_Ks', 11.5);
+    const B_apron = getVal('m4_B_apron', 25);
+    const apronEnd = getVal('m4_apron_end', 96);
+    const v0_allowed = getVal('m4_v0', 0.8);
+    const B_scour = getVal('m4_B_scour', 25);
+
+    const children = [];
+
+    // Title
+    children.push(new docx.Paragraph({ spacing: { before: 600, after: 200 }, alignment: docx.AlignmentType.CENTER, children: [new docx.TextRun({ text: '消能防冲计算书', bold: true, size: 36, font: '黑体' })] }));
+    children.push(new docx.Paragraph({ spacing: { before: 100, after: 400 }, alignment: docx.AlignmentType.CENTER, children: [new docx.TextRun({ text: '版本 2.2   2026年7月10日', size: 20, font: '宋体', color: '888888' })] }));
+
+    // 一、输入参数表 - 增强
+    children.push(makeHeading('一、输入参数表', docx.HeadingLevel.HEADING_1));
+    children.push(makeTable([
+        ['参数名称', '符号', '数值', '单位'],
+        ['消力池尾坎高程', 'Zt', tailSill.toFixed(2), 'm'],
+        ['消力池总宽度(深度计算)', 'B', B_depth.toFixed(1), 'm'],
+        ['动能校正系数', '\u03b1', alpha_d.toFixed(2), ''],
+        ['流速系数', '\u03c6', phi_d.toFixed(2), ''],
+        ['水跃淹没系数', '\u03c30', sigma0.toFixed(2), ''],
+        ['拟定消力池深度', 'd', d_pool.toFixed(2), 'm'],
+        ['消力池宽度(长度计算)', 'B_len', B_len.toFixed(1), 'm'],
+        ['校正系数', '\u03b2', beta.toFixed(2), ''],
+        ['流速系数(长度)', '\u03c6_len', phi.toFixed(2), ''],
+        ['动能校正系数(长度)', '\u03b1_len', alpha.toFixed(2), ''],
+        ['抗冲系数', 'k\u2081', k1.toFixed(3), ''],
+        ['抗冲宽度', 'B_anti', B_anti.toFixed(1), 'm'],
+        ['海漫系数', 'Ks', Ks.toFixed(1), ''],
+        ['海漫宽度', 'B_apron', B_apron.toFixed(1), 'm'],
+        ['海漫末端高程', 'Ze', apronEnd.toFixed(2), 'm'],
+        ['允许不冲流速', '[v\u2080]', v0_allowed.toFixed(2), 'm/s'],
+        ['冲刷宽度', 'B_scour', B_scour.toFixed(1), 'm'],
+    ], [2500, 2000, 2000, 1500]));
+
+    // 引用数据
+    if (m1 && m1.length > 0) {
+        // 二、消力池深度计算 - 大幅增强
+        children.push(makeHeading('二、消力池深度计算', docx.HeadingLevel.HEADING_1));
+        const xiaoNeng = m1.find(c => c.label === '消能防冲') || m1[0];
+        const crestEL_m1 = parseFloat(document.getElementById('crestEL').value) || 100;
+        const ratingData = getM4RatingTable();
+        let hDown_used = xiaoNeng.hDown;
+        if (ratingData && ratingData.length >= 2) {
+            const tmp = getDownstreamWL(xiaoNeng.Q, ratingData);
+            if (tmp !== null) hDown_used = tmp;
+        }
+
+        children.push(makePara('2.1 计算依据', { bold: true }));
+        children.push(makePara('  引用模块一消能防冲工况：Q\u6d88 = ' + xiaoNeng.Q.toFixed(2) + ' m\u00b3/s，上游水位 = ' + xiaoNeng.upstreamLevel.toFixed(3) + ' m'));
+        children.push(makePara('  下游水位 Z\u2097 = ' + hDown_used.toFixed(3) + ' m'));
+        children.push(makePara(''));
+
+        // 2.2 单宽流量
+        const q_d = xiaoNeng.Q / B_depth;
+        children.push(makePara('2.2 单宽流量', { bold: true }));
+        children.push(makePara('  公式：q = Q / B'));
+        children.push(makePara('  代入：q = ' + xiaoNeng.Q.toFixed(2) + ' / ' + B_depth.toFixed(1) + ' = ' + q_d.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara('  结果：q = ' + q_d.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara(''));
+
+        // 2.3 下游水深
+        const h_s = hDown_used - tailSill;
+        children.push(makePara('2.3 下游水深 hs', { bold: true }));
+        children.push(makePara('  公式：hs = 下游水位 \u2212 尾坎高程'));
+        children.push(makePara('  代入：hs = ' + hDown_used.toFixed(3) + ' \u2212 ' + tailSill.toFixed(2) + ' = ' + h_s.toFixed(3) + ' m'));
+        children.push(makePara('  结果：hs = ' + h_s.toFixed(3) + ' m'));
+        children.push(makePara(''));
+
+        // 2.4 上游总水头 T0（初始 d=0）
+        const H0_base = xiaoNeng.upstreamLevel - crestEL_m1 + xiaoNeng.hv;
+        let T0_d0 = H0_base + crestEL_m1 - tailSill;
+        children.push(makePara('2.4 上游总水头 T\u2080（相对于尾坎高程，初始 d=0）', { bold: true }));
+        children.push(makePara('  公式：T\u2080 = (上游水位 \u2212 尾坎高程) + hv'));
+        children.push(makePara('  代入：T\u2080 = (' + xiaoNeng.upstreamLevel.toFixed(3) + ' \u2212 ' + tailSill.toFixed(2) + ') + ' + xiaoNeng.hv.toFixed(5)));
+        children.push(makePara('        = ' + (xiaoNeng.upstreamLevel - tailSill).toFixed(3) + ' + ' + xiaoNeng.hv.toFixed(5) + ' = ' + T0_d0.toFixed(4) + ' m'));
+        children.push(makePara('  结果：T\u2080 = ' + T0_d0.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 2.5 收缩水深 hc (Newton迭代)
+        children.push(makePara('2.5 收缩水深 hc（牛顿迭代求解）', { bold: true }));
+        children.push(makePara('  公式：hc\u00b3 \u2212 T\u2080\u00b7hc\u00b2 + \u03b1\u00b7q\u00b2/(2g\u00b7\u03c6\u00b2) = 0'));
+        const Cc_d = alpha_d * q_d * q_d / (2 * g * phi_d * phi_d);
+        children.push(makePara('  代入：hc\u00b3 \u2212 ' + T0_d0.toFixed(4) + '\u00b7hc\u00b2 + ' + alpha_d.toFixed(2) + '\u00d7' + q_d.toFixed(4) + '\u00b2/(2\u00d7' + g.toFixed(2) + '\u00d7' + phi_d.toFixed(2) + '\u00b2) = 0'));
+        children.push(makePara('  常数项 C = \u03b1\u00b7q\u00b2/(2g\u00b7\u03c6\u00b2) = ' + Cc_d.toFixed(6)));
+        let hc_d0 = 0.4 * T0_d0;
+        children.push(makePara('  迭代初值：hc(0) = 0.4 \u00d7 T\u2080 = 0.4 \u00d7 ' + T0_d0.toFixed(4) + ' = ' + hc_d0.toFixed(4) + ' m'));
+        // Newton iteration
+        let hc_iter_info = [];
+        for (let i = 0; i < 50; i++) {
+            const f = hc_d0 * hc_d0 * hc_d0 - T0_d0 * hc_d0 * hc_d0 + Cc_d;
+            const df = 3 * hc_d0 * hc_d0 - 2 * T0_d0 * hc_d0;
+            if (i < 4) hc_iter_info.push('  迭代' + (i+1) + '：hc = ' + hc_d0.toFixed(6) + '，f = ' + f.toFixed(8));
+            if (Math.abs(f) < 1e-10) break;
+            if (Math.abs(df) < 1e-10) break;
+            hc_d0 = hc_d0 - f / df;
+            if (hc_d0 <= 0) { hc_d0 = 0.001; break; }
+            if (hc_d0 >= T0_d0) hc_d0 = T0_d0 * 0.8;
+        }
+        hc_iter_info.forEach(function(s) { children.push(makePara(s)); });
+        children.push(makePara('  结果：hc = ' + hc_d0.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 2.6 跃后水深 hc"
+        children.push(makePara('2.6 跃后水深 hc"', { bold: true }));
+        const Fr2_d = alpha_d * q_d * q_d / (g * hc_d0 * hc_d0 * hc_d0);
+        children.push(makePara('  公式：hc" = hc/2 \u00d7 [\u221a(1+8\u00b7Fr\u00b2) \u2212 1]'));
+        children.push(makePara('  其中 Fr\u00b2 = \u03b1\u00b7q\u00b2/(g\u00b7hc\u00b3)'));
+        children.push(makePara('  代入：Fr\u00b2 = ' + alpha_d.toFixed(2) + '\u00d7' + q_d.toFixed(4) + '\u00b2/(9.81\u00d7' + hc_d0.toFixed(4) + '\u00b3) = ' + Fr2_d.toFixed(4)));
+        const hc2_d0 = hc_d0 / 2 * (Math.sqrt(1 + 8 * Fr2_d) - 1);
+        children.push(makePara('  代入：hc" = ' + hc_d0.toFixed(4) + '/2 \u00d7 [\u221a(1+8\u00d7' + Fr2_d.toFixed(4) + ') \u2212 1]'));
+        children.push(makePara('        = ' + hc_d0.toFixed(4) + '/2 \u00d7 ' + (Math.sqrt(1+8*Fr2_d)-1).toFixed(4) + ' = ' + hc2_d0.toFixed(4) + ' m'));
+        children.push(makePara('  结果：hc" = ' + hc2_d0.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 2.7 判断是否需要消力池 + 迭代求 d'
+        children.push(makePara('2.7 消力池深度 d\'（迭代求解）', { bold: true }));
+        const needBasin = hc2_d0 > h_s;
+        children.push(makePara('  判断：hc" = ' + hc2_d0.toFixed(4) + ' m ' + (hc2_d0 > h_s ? '>' : '\u2264') + ' hs = ' + h_s.toFixed(3) + ' m'));
+        children.push(makePara('  ' + (needBasin ? '\u21d2 需要设置消力池' : '\u21d2 不需要消力池，为远驱式水跃或临界水跃')));
+
+        let d_final = 0, dz_final = 0, hc_final = hc_d0, hc2_final = hc2_d0, T0_final = T0_d0;
+        let d_iter_count = 0;
+        if (needBasin) {
+            children.push(makePara('  公式：d\' = \u03c30\u00b7hc" \u2212 hs \u2212 \u0394z'));
+            children.push(makePara('  其中 \u0394z = \u03b1\u00b7q\u00b2/(2g\u00b7\u03c6\u00b2\u00b7hs\u00b2) \u2212 \u03b1\u00b7q\u00b2/(2g\u00b7(\u03c30\u00b7hc")\u00b2)'));
+            let dg = 0;
+            for (let iter = 0; iter < 50; iter++) {
+                let T0_cur = H0_base + crestEL_m1 - tailSill + dg;
+                // Solve hc
+                let hc_cur = 0.4 * T0_cur;
+                for (let j = 0; j < 50; j++) {
+                    const f = hc_cur * hc_cur * hc_cur - T0_cur * hc_cur * hc_cur + Cc_d;
+                    const df_ = 3 * hc_cur * hc_cur - 2 * T0_cur * hc_cur;
+                    if (Math.abs(f) < 1e-10) break;
+                    if (Math.abs(df_) < 1e-10) break;
+                    hc_cur = hc_cur - f / df_;
+                    if (hc_cur <= 0) { hc_cur = 0.001; break; }
+                    if (hc_cur >= T0_cur) hc_cur = T0_cur * 0.8;
+                }
+                const Fr2_cur = alpha_d * q_d * q_d / (g * hc_cur * hc_cur * hc_cur);
+                const hc2_cur = hc_cur / 2 * (Math.sqrt(1 + 8 * Fr2_cur) - 1);
+                const hsEff = Math.max(h_s, 1.0);
+                const A_dz = alpha_d * q_d * q_d / (2 * g);
+                const dz_cur = A_dz * (1 / (phi_d * phi_d * hsEff * hsEff) - 1 / (sigma0 * hc2_cur * sigma0 * hc2_cur));
+                const dn = sigma0 * hc2_cur - h_s - dz_cur;
+                if (iter < 5) {
+                    children.push(makePara('  迭代' + (iter+1) + '：d = ' + dg.toFixed(4) + ' \u2192 T\u2080 = ' + T0_cur.toFixed(4) + ' \u2192 hc = ' + hc_cur.toFixed(4) + ' \u2192 hc" = ' + hc2_cur.toFixed(4) + ' \u2192 \u0394z = ' + dz_cur.toFixed(4) + ' \u2192 d\' = ' + dn.toFixed(4)));
+                }
+                if (Math.abs(dn - dg) < 0.001) {
+                    d_final = Math.max(0, dn);
+                    dz_final = dz_cur;
+                    hc_final = hc_cur;
+                    hc2_final = hc2_cur;
+                    T0_final = T0_cur;
+                    d_iter_count = iter + 1;
+                    break;
+                }
+                dg = dn;
+                if (dg < 0) dg = 0;
+                d_iter_count = iter + 1;
+            }
+            children.push(makePara('  结果：d\' = ' + d_final.toFixed(4) + ' m（迭代 ' + d_iter_count + ' 次收敛）'));
+        } else {
+            children.push(makePara('  结果：d\' = 0 m（无需设置消力池）'));
+        }
+        children.push(makePara(''));
+
+        // 三、消力池长度计算 - 增强
+        children.push(makeHeading('三、消力池长度计算', docx.HeadingLevel.HEADING_1));
+
+        const q_len = xiaoNeng.Q / B_len;
+        const T0_len = (xiaoNeng.upstreamLevel - tailSill) + xiaoNeng.hv + d_pool;
+
+        children.push(makePara('3.1 单宽流量与总水头 T\u2080（计入拟定池深 d）', { bold: true }));
+        children.push(makePara('  公式：q = Q / B_len'));
+        children.push(makePara('  代入：q = ' + xiaoNeng.Q.toFixed(2) + ' / ' + B_len.toFixed(1) + ' = ' + q_len.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara('  结果：q = ' + q_len.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara(''));
+        children.push(makePara('  公式：T\u2080 = (上游水位 \u2212 尾坎高程) + hv + d'));
+        children.push(makePara('  代入：T\u2080 = (' + xiaoNeng.upstreamLevel.toFixed(3) + ' \u2212 ' + tailSill.toFixed(2) + ') + ' + xiaoNeng.hv.toFixed(5) + ' + ' + d_pool.toFixed(2)));
+        children.push(makePara('        = ' + (xiaoNeng.upstreamLevel - tailSill).toFixed(3) + ' + ' + xiaoNeng.hv.toFixed(5) + ' + ' + d_pool.toFixed(2) + ' = ' + T0_len.toFixed(4) + ' m'));
+        children.push(makePara('  结果：T\u2080 = ' + T0_len.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 3.2 hc Newton
+        children.push(makePara('3.2 收缩水深 hc（牛顿迭代）', { bold: true }));
+        children.push(makePara('  公式：hc\u00b3 \u2212 T\u2080\u00b7hc\u00b2 + \u03b1\u00b7q\u00b2/(2g\u00b7\u03c6\u00b2) = 0'));
+        const Cc_len = alpha * q_len * q_len / (2 * g * phi * phi);
+        children.push(makePara('  常数项 C = \u03b1\u00b7q\u00b2/(2g\u00b7\u03c6\u00b2) = ' + Cc_len.toFixed(6)));
+        let hc_len = 0.4 * T0_len;
+        children.push(makePara('  迭代初值：hc(0) = 0.4 \u00d7 T\u2080 = 0.4 \u00d7 ' + T0_len.toFixed(4) + ' = ' + hc_len.toFixed(4) + ' m'));
+        let hc_len_iter = [];
+        for (let i = 0; i < 50; i++) {
+            const f = hc_len * hc_len * hc_len - T0_len * hc_len * hc_len + Cc_len;
+            const df = 3 * hc_len * hc_len - 2 * T0_len * hc_len;
+            if (i < 4) hc_len_iter.push('  迭代' + (i+1) + '：hc = ' + hc_len.toFixed(6) + '，f = ' + f.toFixed(8));
+            if (Math.abs(f) < 1e-10) break;
+            if (Math.abs(df) < 1e-10) break;
+            hc_len = hc_len - f / df;
+            if (hc_len <= 0) { hc_len = 0.001; break; }
+            if (hc_len >= T0_len) { hc_len = T0_len * 0.8; }
+        }
+        hc_len_iter.forEach(function(s) { children.push(makePara(s)); });
+        children.push(makePara('  结果：hc = ' + hc_len.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 3.3 跃后水深
+        children.push(makePara('3.3 跃后水深 hc"', { bold: true }));
+        const Fr2_len = alpha * q_len * q_len / (g * hc_len * hc_len * hc_len);
+        children.push(makePara('  公式：hc" = hc/2 \u00d7 [\u221a(1+8\u00b7Fr\u00b2) \u2212 1]'));
+        children.push(makePara('  其中 Fr\u00b2 = \u03b1\u00b7q\u00b2/(g\u00b7hc\u00b3)'));
+        children.push(makePara('  代入：Fr\u00b2 = ' + alpha.toFixed(2) + '\u00d7' + q_len.toFixed(4) + '\u00b2/(9.81\u00d7' + hc_len.toFixed(4) + '\u00b3) = ' + Fr2_len.toFixed(4)));
+        const hc2_len = hc_len / 2 * (Math.sqrt(1 + 8 * Fr2_len) - 1);
+        const sqrt_term = (Math.sqrt(1 + 8 * Fr2_len) - 1);
+        children.push(makePara('  代入：hc" = ' + hc_len.toFixed(4) + '/2 \u00d7 [\u221a(1+8\u00d7' + Fr2_len.toFixed(4) + ') \u2212 1]'));
+        children.push(makePara('        = ' + hc_len.toFixed(4) + '/2 \u00d7 ' + sqrt_term.toFixed(4) + ' = ' + hc2_len.toFixed(4) + ' m'));
+        children.push(makePara('  结果：hc" = ' + hc2_len.toFixed(4) + ' m'));
+        children.push(makePara(''));
+
+        // 3.4 自由水跃长度
+        children.push(makePara('3.4 自由水跃长度 Lj', { bold: true }));
+        const diff_len = hc2_len - hc_len;
+        const Lj = 6.9 * diff_len;
+        children.push(makePara('  公式：Lj = 6.9 \u00d7 (hc" \u2212 hc)'));
+        children.push(makePara('  代入：Lj = 6.9 \u00d7 (' + hc2_len.toFixed(4) + ' \u2212 ' + hc_len.toFixed(4) + ')'));
+        children.push(makePara('        = 6.9 \u00d7 ' + diff_len.toFixed(4) + ' = ' + Lj.toFixed(2) + ' m'));
+        children.push(makePara('  结果：Lj = ' + Lj.toFixed(2) + ' m'));
+        children.push(makePara(''));
+
+        // 3.5 消力池长度
+        children.push(makePara('3.5 消力池长度 L', { bold: true }));
+        const L_gj = beta * Lj;
+        children.push(makePara('  公式：L = Ls + \u03b2 \u00d7 Lj'));
+        children.push(makePara('  代入：L = 0 + ' + beta.toFixed(2) + ' \u00d7 ' + Lj.toFixed(2) + ' = ' + L_gj.toFixed(2) + ' m'));
+        children.push(makePara('  结果：L = ' + L_gj.toFixed(2) + ' m'));
+
+        // 四、底板抗冲 - 增强
+        children.push(makeHeading('四、底板抗冲厚度计算', docx.HeadingLevel.HEADING_1));
+        const deltaH_anti = xiaoNeng.upstreamLevel - hDown_used;
+        const q_anti = xiaoNeng.Q / B_anti;
+        const t = k1 * Math.sqrt(q_anti) * Math.sqrt(deltaH_anti);
+
+        children.push(makePara('4.1 上下游水位差', { bold: true }));
+        children.push(makePara('  公式：\u0394H\' = 上游水位 \u2212 下游水位'));
+        children.push(makePara('  代入：\u0394H\' = ' + xiaoNeng.upstreamLevel.toFixed(3) + ' \u2212 ' + hDown_used.toFixed(3) + ' = ' + deltaH_anti.toFixed(3) + ' m'));
+        children.push(makePara('  结果：\u0394H\' = ' + deltaH_anti.toFixed(3) + ' m'));
+        children.push(makePara(''));
+
+        children.push(makePara('4.2 单宽流量', { bold: true }));
+        children.push(makePara('  公式：q = Q / B_anti'));
+        children.push(makePara('  代入：q = ' + xiaoNeng.Q.toFixed(2) + ' / ' + B_anti.toFixed(1) + ' = ' + q_anti.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara('  结果：q = ' + q_anti.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara(''));
+
+        children.push(makePara('4.3 底板抗冲厚度', { bold: true }));
+        children.push(makePara('  公式：t = k\u2081 \u00b7 \u221aq \u00b7 \u221a\u0394H\''));
+        children.push(makePara('  代入：t = ' + k1.toFixed(3) + ' \u00d7 \u221a(' + q_anti.toFixed(4) + ') \u00d7 \u221a(' + deltaH_anti.toFixed(3) + ')'));
+        children.push(makePara('        = ' + k1.toFixed(3) + ' \u00d7 ' + Math.sqrt(q_anti).toFixed(4) + ' \u00d7 ' + Math.sqrt(deltaH_anti).toFixed(4) + ' = ' + t.toFixed(3) + ' m'));
+        children.push(makePara('  结果：t = ' + t.toFixed(3) + ' m'));
+
+        // 五、海漫长度 - 增强
+        children.push(makeHeading('五、海漫长度计算', docx.HeadingLevel.HEADING_1));
+        const qs = xiaoNeng.Q / B_apron;
+        const sqrt_dH = Math.sqrt(Math.max(deltaH_anti, 0.01));
+        const Lp = Ks * Math.sqrt(qs * sqrt_dH);
+
+        children.push(makePara('5.1 单宽流量', { bold: true }));
+        children.push(makePara('  公式：q_s = Q / B_apron'));
+        children.push(makePara('  代入：q_s = ' + xiaoNeng.Q.toFixed(2) + ' / ' + B_apron.toFixed(1) + ' = ' + qs.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara('  结果：q_s = ' + qs.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara(''));
+
+        children.push(makePara('5.2 海漫长度', { bold: true }));
+        children.push(makePara('  公式：L_p = Ks \u00b7 \u221a(q_s \u00b7 \u221a\u0394H\')'));
+        children.push(makePara('  代入：L_p = ' + Ks.toFixed(1) + ' \u00d7 \u221a(' + qs.toFixed(4) + ' \u00d7 \u221a' + deltaH_anti.toFixed(3) + ')'));
+        children.push(makePara('        = ' + Ks.toFixed(1) + ' \u00d7 \u221a(' + qs.toFixed(4) + ' \u00d7 ' + sqrt_dH.toFixed(4) + ')'));
+        children.push(makePara('        = ' + Ks.toFixed(1) + ' \u00d7 ' + Math.sqrt(qs * sqrt_dH).toFixed(4) + ' = ' + Lp.toFixed(2) + ' m'));
+        children.push(makePara('  结果：L_p = ' + Lp.toFixed(2) + ' m'));
+
+        // 六、冲刷深度 - 增强
+        children.push(makeHeading('六、冲刷深度计算', docx.HeadingLevel.HEADING_1));
+        const qm = xiaoNeng.Q / B_scour;
+        const hm = hDown_used - apronEnd;
+        const dm = 1.1 * qm / v0_allowed - hm;
+
+        children.push(makePara('6.1 单宽流量', { bold: true }));
+        children.push(makePara('  公式：q_m = Q / B_scour'));
+        children.push(makePara('  代入：q_m = ' + xiaoNeng.Q.toFixed(2) + ' / ' + B_scour.toFixed(1) + ' = ' + qm.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara('  结果：q_m = ' + qm.toFixed(4) + ' m\u00b3/s/m'));
+        children.push(makePara(''));
+
+        children.push(makePara('6.2 海漫末端水深', { bold: true }));
+        children.push(makePara('  公式：h_m = 下游水位 \u2212 海漫末端高程'));
+        children.push(makePara('  代入：h_m = ' + hDown_used.toFixed(3) + ' \u2212 ' + apronEnd.toFixed(2) + ' = ' + hm.toFixed(3) + ' m'));
+        children.push(makePara('  结果：h_m = ' + hm.toFixed(3) + ' m'));
+        children.push(makePara(''));
+
+        children.push(makePara('6.3 冲刷深度', { bold: true }));
+        children.push(makePara('  公式：d_m = 1.1 \u00b7 q_m / [v\u2080] \u2212 h_m'));
+        children.push(makePara('  代入：d_m = 1.1 \u00d7 ' + qm.toFixed(4) + ' / ' + v0_allowed.toFixed(2) + ' \u2212 ' + hm.toFixed(3)));
+        children.push(makePara('        = ' + (1.1*qm/v0_allowed).toFixed(4) + ' \u2212 ' + hm.toFixed(3) + ' = ' + dm.toFixed(3) + ' m'));
+        children.push(makePara('  结果：d_m = ' + dm.toFixed(3) + ' m' + (dm <= 0 ? '（\u2264 0，表示海漫末端不会发生冲刷）' : '')));
+        if (dm > 0) {
+            children.push(makePara(''));
+            children.push(makePara('  注意：当 d_m > 0 时，海漫末端存在冲刷风险，建议增设防冲槽或加深海漫。'));
+        }
+    } else {
+        children.push(makeHeading('提示', docx.HeadingLevel.HEADING_2));
+        children.push(makePara('尚未进行模块一计算，无法输出详细计算过程。请先在模块一中完成计算后再导出。'));
+    }
+
+    const doc = new docx.Document({ sections: [{ ...makeA4Section(), children }] });
+    await saveDocx(doc, '消能防冲计算书.docx');
+}
+
+// ============================================================
+//  页面加载时自动计算
+// ============================================================
+
+window.addEventListener('DOMContentLoaded', () => {
+    toggleSlopeInput();
+    calculate();
+    initM4RatingRows();
+
+    // 模块切换栏点击事件
+    document.querySelector('.module-bar')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.module-btn');
+        if (btn) switchModule(btn.dataset.module);
+    });
+});
+</script>
+</div>
+</body>
+</html>
+
