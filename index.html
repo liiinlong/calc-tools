@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水利水电计算程序合集</title>
+<style>
+  :root{
+    --bg:#f4f7fa; --card:#ffffff; --primary:#1f6feb; --primary-d:#1453b8;
+    --text:#1f2933; --sub:#5b6573; --border:#e3e8ef; --shadow:0 2px 12px rgba(31,111,235,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6; padding:32px 16px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  header{text-align:center;margin-bottom:8px;}
+  header h1{font-size:28px;font-weight:700;letter-spacing:1px;}
+  header p{color:var(--sub);font-size:15px;margin-top:6px;}
+  .note{
+    background:#fff8e6;border:1px solid #ffe2a8;color:#8a6d1a;
+    border-radius:10px;padding:12px 16px;font-size:13px;margin:20px 0 28px;
+  }
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:20px;box-shadow:var(--shadow);text-decoration:none;color:inherit;
+    transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(31,111,235,.16);border-color:var(--primary);}
+  .card .idx{font-size:13px;color:var(--primary);font-weight:700;letter-spacing:1px;}
+  .card .title{font-size:17px;font-weight:600;}
+  .card .desc{font-size:13px;color:var(--sub);}
+  .card .go{margin-top:auto;font-size:13px;color:var(--primary);font-weight:600;}
+  footer{text-align:center;color:var(--sub);font-size:12px;margin-top:36px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>水利水电计算程序合集</h1>
+    <p>水利工程常用计算工具 · 点击卡片进入对应程序</p>
+  </header>
+
+  <div class="note">
+    提示：部份程序导出成果（Word / Excel）需联网加载远程库。
+  </div>
+
+  <div class="grid">
+    <a class="card" href="土石坝坝顶高程计算 2026-7-10版本.html">
+      <span class="idx">01</span>
+      <span class="title">土石坝坝顶高程计算</span>
+      <span class="desc">根据风浪爬高、安全加高确定坝顶高程。</span>
+      <span class="go">进入程序 →</span>
+    </a>
+
+    <a class="card" href="水闸过流及消能防冲计算程序-2026-7-10版本.html">
+      <span class="idx">02</span>
+      <span class="title">水闸过流及消能防冲计算</span>
+      <span class="desc">闸孔过流能力、消能防冲综合计算。</span>
+      <span class="go">进入程序 →</span>
+    </a>
+
+    <a class="card" href="水闸闸顶高程计算器-2026-7-10版.html">
+      <span class="idx">03</span>
+      <span class="title">水闸闸顶高程计算器</span>
+      <span class="desc">快速推算水闸闸顶高程。</span>
+      <span class="go">进入程序 →</span>
+    </a>
+
+    <a class="card" href="WES堰过流能力及消能计算2026-7-10版本.html">
+      <span class="idx">04</span>
+      <span class="title">WES 堰过流及消能计算</span>
+      <span class="desc">实用堰（WES 型）过流能力与消能核算。</span>
+      <span class="go">进入程序 →</span>
+    </a>
+
+    <a class="card" href="塑料管竖向转弯-回拖力计算表程序-2026-7-13.html">
+      <span class="idx">05</span>
+      <span class="title">塑料管竖向转弯回拖力计算</span>
+      <span class="desc">非开挖拖拉管竖向转弯段回拖力计算。</span>
+      <span class="go">进入程序 →</span>
+    </a>
+  </div>
+
+  <footer>本合集由静态页面托管，所有计算程序均为本地运行。</footer>
+</div>
+</body>
+</html>
