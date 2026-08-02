@@ -205,13 +205,75 @@
             border-left-color: #e53e3e;
         }
         .result-final {
-            background: linear-gradient(135deg, #ebf8ff, #e6f0ff);
-            border: 2px solid #1a56db;
+            background: linear-gradient(135deg, #fff5f5, #fee2e2);
+            border: 2px solid #e53e3e;
             border-left-width: 6px;
         }
         .result-final .value {
             font-size: 28px;
+            color: #e53e3e;
+        }
+
+        /* 详细计算过程：子标题 */
+        .calc-sub-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a202c;
+            padding: 10px 14px;
+            background: #edf2f7;
+            border-radius: 8px;
+            margin: 14px 0 10px;
+            border-left: 4px solid #1a56db;
+        }
+        .calc-sub-title.wave {
+            border-left-color: #2b6cb0;
+        }
+        .calc-sub-title.elev {
+            border-left-color: #e53e3e;
+        }
+        /* 详细计算过程：逐步代入行 */
+        .calc-steps {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            line-height: 2.0;
+            margin-bottom: 4px;
+        }
+        .calc-steps .calc-line {
+            font-family: Consolas, "Courier New", monospace;
+            white-space: nowrap;
+        }
+        .calc-steps .calc-line .f {
+            font-weight: 600;
             color: #1a56db;
+        }
+        .calc-steps .calc-line .r {
+            font-weight: 700;
+            color: #e53e3e;
+        }
+        .calc-steps .calc-note {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 4px;
+        }
+        .calc-steps .calc-result-line {
+            font-weight: 700;
+            color: #e53e3e;
+            font-size: 14px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        /* 闸顶高程表格：关键值红色 */
+        .cell-red {
+            color: #e53e3e;
+            font-weight: 700;
+        }
+        .cell-blue {
+            color: #1a56db;
+            font-weight: 600;
         }
 
         .table-wrap {
@@ -470,15 +532,22 @@
         </div>
 
         <div id="resultArea" style="display:none;">
-            <!-- 中间结果 -->
+            <!-- 详细计算过程 -->
             <div class="card-title" style="font-size:15px;border-bottom-color:#e2e8f0;margin-bottom:14px;">
                 📋 详细计算过程
             </div>
-            <div class="result-grid" id="intermediateResults"></div>
+
+            <!-- 波浪要素计算 -->
+            <div class="calc-sub-title wave">🌊 波浪要素计算</div>
+            <div id="waveCalcArea"></div>
+
+            <!-- 闸顶高程计算 -->
+            <div class="calc-sub-title elev">🏗 闸顶高程计算</div>
+            <div id="elevCalcArea"></div>
 
             <!-- 最终结果 -->
             <div style="margin-top:20px;">
-                <div class="card-title" style="font-size:15px;border-bottom-color:#1a56db;margin-bottom:14px;color:#1a56db;">
+                <div class="card-title" style="font-size:15px;border-bottom-color:#e53e3e;margin-bottom:14px;color:#e53e3e;">
                     ✅ 最终推荐闸顶高程
                 </div>
                 <div id="finalResult"></div>
@@ -675,6 +744,7 @@
         const isAutoWave = document.getElementById('tab-auto').classList.contains('show');
         let waveHeight = 0;
         let waveCalcDetail = '';
+        let waveCalcHTML = '';
         let hm = 0, Tm = 0, Lm = 0, hp = 0, hz = 0;
 
         if (isAutoWave) {
@@ -738,10 +808,57 @@
             waveCalcDetail += `，P = ${pVal}%，hp/hm = ${ratio.toFixed(3)}，hp = ${hp.toFixed(4)} m`;
             waveCalcDetail += `，hz = ${hz.toFixed(4)} m，R = hp + hz = ${waveHeight.toFixed(4)} m`;
 
+            // 波浪要素计算详细过程（逐步代入）
+            waveCalcHTML = `
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">① 无因次参数计算</span></div>
+                    <div class="calc-line">gH/W² = g×H/W² = ${g.toFixed(2)}×${H.toFixed(1)}/${W.toFixed(1)}² = <span class="r">${gHW2.toFixed(4)}</span></div>
+                    <div class="calc-line">gD/W² = g×D/W² = ${g.toFixed(2)}×${D}/${W.toFixed(1)}² = <span class="r">${gDW2.toFixed(4)}</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">② 双曲正切参数 th₁、th₂</span></div>
+                    <div class="calc-line">th₁ = tanh(0.7×(gH/W²)^0.7) = tanh(0.7×${gHW2.toFixed(4)}^0.7) = tanh(${term1_inner.toFixed(4)}) = <span class="r">${th_term1.toFixed(6)}</span></div>
+                    <div class="calc-line">th₂ = tanh(0.0018×(gD/W²)^0.45/(0.13×th₁)) = tanh(0.0018×${gDW2.toFixed(4)}^0.45/(0.13×${th_term1.toFixed(4)})) = tanh(${term2_inner.toFixed(4)}) = <span class="r">${th_term2.toFixed(6)}</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">③ 平均波高 h<sub>m</sub></span>（莆田试验站公式）</div>
+                    <div class="calc-line">h<sub>m</sub> = (W²/g)×0.13×th₁×th₂ = (${W.toFixed(1)}²/${g.toFixed(2)})×0.13×${th_term1.toFixed(4)}×${th_term2.toFixed(4)} = <span class="r">${hm.toFixed(4)} m</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">④ 平均波周期 T<sub>m</sub></span></div>
+                    <div class="calc-line">T<sub>m</sub> = (W/g)×13.9×√(g×h<sub>m</sub>/W²) = (${W.toFixed(1)}/${g.toFixed(2)})×13.9×√(${g.toFixed(2)}×${hm.toFixed(4)}/${W.toFixed(1)}²) = <span class="r">${Tm.toFixed(3)} s</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">⑤ 平均波长 L<sub>m</sub></span>（迭代求解）</div>
+                    <div class="calc-line">L<sub>m</sub> = (g×T<sub>m</sub>²/2π)×tanh(2πH/L<sub>m</sub>) = (${g.toFixed(2)}×${Tm.toFixed(3)}²/6.2832)×tanh(2π×${H.toFixed(1)}/${Lm.toFixed(3)}) = <span class="r">${Lm.toFixed(3)} m</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">⑥ 设计波高 h<sub>p%</sub></span>（波列累积频率 P=${pVal}%）</div>
+                    <div class="calc-line">h<sub>m</sub>/H<sub>m</sub> = ${hm.toFixed(4)}/${avgDepth.toFixed(1)} = ${hmHm.toFixed(4)}（H<sub>m</sub>为闸前平均水深）</div>
+                    <div class="calc-line">查表插值（P=${pVal}%）→ h<sub>p%</sub>/h<sub>m</sub> = <span class="r">${ratio.toFixed(3)}</span></div>
+                    <div class="calc-line">h<sub>p%</sub> = h<sub>m</sub>×(h<sub>p%</sub>/h<sub>m</sub>) = ${hm.toFixed(4)}×${ratio.toFixed(3)} = <span class="r">${hp.toFixed(4)} m</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line"><span class="f">⑦ 波浪中心线至静水位高差 h<sub>z</sub></span></div>
+                    <div class="calc-line">h<sub>z</sub> = (π×h<sub>p%</sub>²/L<sub>m</sub>)×cth(2πH/L<sub>m</sub>) = (3.1416×${hp.toFixed(4)}²/${Lm.toFixed(3)})×cth(${argCth.toFixed(4)}) = <span class="r">${hz.toFixed(4)} m</span></div>
+                </div>
+                <div class="calc-steps">
+                    <div class="calc-line calc-result-line">R = h<sub>p%</sub> + h<sub>z</sub> = ${hp.toFixed(4)} + ${hz.toFixed(4)} = ${waveHeight.toFixed(4)} m</div>
+                </div>
+            `;
+
             // 如果手动方式显示但用户切到了自动，忽略手动值
         } else {
             waveHeight = parseFloat(document.getElementById('manualWaveH').value) || 0;
             waveCalcDetail = `手动输入 R = ${waveHeight.toFixed(3)} m`;
+
+            // 波浪要素计算详细过程（手动输入）
+            waveCalcHTML = `
+                <div class="calc-steps">
+                    <div class="calc-line">R（手动输入） = <span class="r">${waveHeight.toFixed(3)} m</span></div>
+                    <div class="calc-note">R = h<sub>p%</sub> + h<sub>z</sub>（波高 + 波浪中心线至水位的高差）</div>
+                </div>
+            `;
         }
 
         // --- 安全加高 ---
@@ -816,102 +933,56 @@
         // --- 渲染结果 ---
         document.getElementById('resultArea').style.display = 'block';
 
-        // 中间结果
-        let interHTML = '';
+        // ============ 波浪要素计算（详细过程，逐步代入） ============
+        document.getElementById('waveCalcArea').innerHTML = waveCalcHTML;
 
-        if (isAutoWave) {
-            interHTML += `
-                <div class="result-item">
-                    <div class="label">🌊 平均波高 h<sub>m</sub></div>
-                    <div class="value">${hm.toFixed(4)}<span class="unit-suffix">m</span></div>
+        // ============ 闸顶高程计算（安全加高 + 各工况表格） ============
+        const wHStr = isAutoWave ? waveHeight.toFixed(4) : waveHeight.toFixed(3);
+        const elevCalcHTML = `
+            <div class="calc-steps" style="padding-bottom:10px;">
+                <div class="calc-line"><span class="f">安全加高 A（水闸 ${level} 级，查规范表）</span></div>
+                <div class="table-wrap" style="margin-top:8px;">
+                    <table style="max-width:560px;margin:0 auto;">
+                        <tr><th>运用工况</th><th>符号</th><th>安全加高 A (m)</th></tr>
+                        <tr><td>挡水时 — 正常蓄水位</td><td>A<sub>挡,正</sub></td><td class="cell-blue">${A_retain_normal.toFixed(1)}</td></tr>
+                        <tr><td>挡水时 — 最高挡水位</td><td>A<sub>挡,最</sub></td><td class="cell-blue">${A_retain_max.toFixed(1)}</td></tr>
+                        <tr><td>泄水时 — 设计洪水位</td><td>A<sub>泄,设</sub></td><td class="cell-blue">${A_discharge_design.toFixed(1)}</td></tr>
+                        <tr><td>泄水时 — 校核洪水位</td><td>A<sub>泄,校</sub></td><td class="cell-blue">${A_discharge_check.toFixed(1)}</td></tr>
+                    </table>
                 </div>
-                <div class="result-item">
-                    <div class="label">⏱ 平均波周期 T<sub>m</sub></div>
-                    <div class="value">${Tm.toFixed(3)}<span class="unit-suffix">s</span></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">📏 平均波长 L<sub>m</sub></div>
-                    <div class="value">${Lm.toFixed(3)}<span class="unit-suffix">m</span></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">📊 设计波高 h<sub>p%</sub>（P=${waveP[level]}%）</div>
-                    <div class="value">${hp.toFixed(4)}<span class="unit-suffix">m</span></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">🌬 波浪中心线至水位的高差 h<sub>z</sub></div>
-                    <div class="value">${hz.toFixed(4)}<span class="unit-suffix">m</span></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">🌊 波浪计算高度 R = h<sub>p%</sub> + h<sub>z</sub></div>
-                    <div class="value">${waveHeight.toFixed(4)}<span class="unit-suffix">m</span></div>
-                </div>
-            `;
-        } else {
-            interHTML += `
-                <div class="result-item">
-                    <div class="label">🌊 波浪计算高度 R（手动输入）</div>
-                    <div class="value">${waveHeight.toFixed(3)}<span class="unit-suffix">m</span></div>
-                </div>
-            `;
-        }
-
-        // 安全加高
-        interHTML += `
-            <div class="result-item">
-                <div class="label">🛡 挡水-正常蓄水位 安全加高 A<sub>挡,正</sub></div>
-                <div class="value">${A_retain_normal.toFixed(1)}<span class="unit-suffix">m</span></div>
             </div>
-            <div class="result-item">
-                <div class="label">🛡 挡水-最高挡水位 安全加高 A<sub>挡,最</sub></div>
-                <div class="value">${A_retain_max.toFixed(1)}<span class="unit-suffix">m</span></div>
+            <div class="calc-steps">
+                <div class="calc-line"><span class="f">计算公式：</span>挡水时 ∇<sub>闸顶</sub> = 水位 + R + A；泄水时 ∇<sub>闸顶</sub> = 水位 + A</div>
+                <div class="table-wrap" style="margin-top:8px;">
+                    <table>
+                        <tr><th>序号</th><th>计算工况</th><th>计算公式</th><th>代入计算</th><th>闸顶高程下限 (m)</th></tr>
+                        <tr><td>1</td><td>挡水-正常蓄水位</td><td>∇<sub>正</sub> + R + A<sub>挡,正</sub></td><td>${normalWL.toFixed(2)} + ${wHStr} + ${A_retain_normal.toFixed(1)}</td><td class="cell-red">${elev_retain_normal.toFixed(2)}</td></tr>
+                        <tr><td>2</td><td>挡水-最高挡水位</td><td>∇<sub>挡</sub> + R + A<sub>挡,最</sub></td><td>${retainWL.toFixed(2)} + ${wHStr} + ${A_retain_max.toFixed(1)}</td><td class="cell-red">${elev_retain_max.toFixed(2)}</td></tr>
+                        <tr><td>3</td><td>泄水-设计洪水位</td><td>∇<sub>设</sub> + A<sub>泄,设</sub></td><td>${designFL.toFixed(2)} + ${A_discharge_design.toFixed(1)}</td><td class="cell-red">${elev_discharge_design.toFixed(2)}</td></tr>
+                        <tr><td>4</td><td>泄水-校核洪水位</td><td>∇<sub>校</sub> + A<sub>泄,校</sub></td><td>${checkFL.toFixed(2)} + ${A_discharge_check.toFixed(1)}</td><td class="cell-red">${elev_discharge_check.toFixed(2)}</td></tr>
+                        ${leveeElev !== null && !isNaN(leveeElev) ? `<tr><td>5</td><td>防洪(挡潮)堤顶高程</td><td>∇<sub>堤顶</sub></td><td>—</td><td class="cell-red">${leveeElev.toFixed(2)}</td></tr>` : ''}
+                    </table>
+                </div>
             </div>
-            <div class="result-item">
-                <div class="label">🛡 泄水-设计洪水位 安全加高 A<sub>泄,设</sub></div>
-                <div class="value">${A_discharge_design.toFixed(1)}<span class="unit-suffix">m</span></div>
-            </div>
-            <div class="result-item">
-                <div class="label">🛡 泄水-校核洪水位 安全加高 A<sub>泄,校</sub></div>
-                <div class="value">${A_discharge_check.toFixed(1)}<span class="unit-suffix">m</span></div>
-            </div>
-            <div class="result-item">
-                <div class="label">🏗 推算交通桥底高程 ∇<sub>桥底</sub> = ∇<sub>闸顶</sub> − 桥厚</div>
-                <div class="value">${(maxElev - bridgeThick).toFixed(2)}<span class="unit-suffix">m</span></div>
-                <div style="font-size:12px;color:#718096;margin-top:2px;">${maxElev.toFixed(2)} − ${bridgeThick.toFixed(2)} = ${(maxElev - bridgeThick).toFixed(2)} m</div>
+            <div class="calc-steps">
+                <div class="calc-line">∇<sub>桥底</sub> = ∇<sub>闸顶</sub> − 桥厚 = ${maxElev.toFixed(2)} − ${bridgeThick.toFixed(2)} = ${(maxElev - bridgeThick).toFixed(2)} m</div>
+                <div class="calc-note">桥底高出最高洪水位（${maxFloodLevel.toFixed(2)}m）：${bridgeCheck.toFixed(2)} m ${bridgeCheck >= 0.5 ? '✅ 满足 ≥ 0.5m' : '❌ 不满足'}</div>
             </div>
         `;
+        document.getElementById('elevCalcArea').innerHTML = elevCalcHTML;
 
-        document.getElementById('intermediateResults').innerHTML = interHTML;
-
-        // 各工况闸顶高程
-        let candidateHTML = '<div class="result-grid">';
-        candidates.forEach(c => {
-            const isCtrl = controlling.some(cc => cc.name === c.name);
-            candidateHTML += `
-                <div class="result-item ${isCtrl ? 'result-final' : ''}">
-                    <div class="label">${c.name} ${isCtrl ? '⭐ 控制工况' : ''}</div>
-                    <div class="value">${c.value.toFixed(2)}<span class="unit-suffix">m</span></div>
-                    <div style="font-size:12px;color:#718096;margin-top:2px;">${c.desc}</div>
-                </div>
-            `;
-        });
-        candidateHTML += '</div>';
-
-        // 最终结果
+        // ============ 最终推荐闸顶高程（红色高亮，不标注控制工况） ============
         const finalHTML = `
             <div style="margin-bottom:16px;">
                 <div style="font-size:14px;color:#4a5568;margin-bottom:10px;">
-                    取各工况最大值${bridgeAdjusted ? '，并抬升以满足桥底高程要求' : '，并满足防洪堤要求'}：
-                    ${bridgeAdjusted ? `<span style="color:#d69e2e;font-weight:600;">${adjustmentNote}</span>` : ''}
+                    取各工况闸顶高程下限的最大值作为推荐闸顶高程
+                    ${bridgeAdjusted ? `，并抬升以满足桥底高程要求：<span style="color:#d69e2e;font-weight:600;">${adjustmentNote}</span>` : ''}
                 </div>
-                <div class="result-final result-item" style="background:linear-gradient(135deg, #ebf8ff, #dbeafe);">
+                <div class="result-final result-item">
                     <div class="label">🏆 推荐闸顶高程 ∇<sub>闸顶</sub></div>
                     <div class="value">${maxElev.toFixed(2)}<span class="unit-suffix">m</span></div>
-                    <div style="font-size:13px;color:#4a5568;margin-top:4px;">
-                        控制工况：${controlling.map(c => c.name).join('、')}
-                    </div>
                 </div>
             </div>
-            ${candidateHTML}
         `;
         document.getElementById('finalResult').innerHTML = finalHTML;
 
@@ -1249,39 +1320,42 @@
             waveSec = `
                 <h3>2.2 莆田试验站公式计算平均波高 h<sub>m</sub></h3>
                 <p style="margin-left:20px;font-family:monospace;font-size:11pt;">
+                    ① 无因次参数<br>
                     g·H/W² = ${g.toFixed(2)} × ${w.H.toFixed(1)} / ${w.W.toFixed(1)}² = ${w.gHW2.toFixed(6)}<br>
                     g·D/W² = ${g.toFixed(2)} × ${w.D} / ${w.W.toFixed(1)}² = ${w.gDW2.toFixed(6)}<br>
+                    ② 双曲正切参数<br>
                     th₁ = tanh(0.7 × (gH/W²)^0.7) = tanh(0.7 × ${w.gHW2.toFixed(6)}^0.7) = ${w.th_term1.toFixed(6)}<br>
-                    th₂ = tanh(0.0018×(gD/W²)^0.45 / (0.13×th₁)) = ${w.th_term2.toFixed(6)}<br>
-                    <b style="color:#1a56db;">h<sub>m</sub> = (W²/g) × 0.13 × th₁ × th₂ = ${w.hm.toFixed(4)} m</b>
+                    th₂ = tanh(0.0018×(gD/W²)^0.45 / (0.13×th₁)) = tanh(0.0018×${w.gDW2.toFixed(6)}^0.45/(0.13×${w.th_term1.toFixed(6)})) = ${w.th_term2.toFixed(6)}<br>
+                    ③ 平均波高<br>
+                    <b style="color:#e53e3e;">h<sub>m</sub> = (W²/g) × 0.13 × th₁ × th₂ = (${w.W.toFixed(1)}²/${g.toFixed(2)}) × 0.13 × ${w.th_term1.toFixed(6)} × ${w.th_term2.toFixed(6)} = ${w.hm.toFixed(4)} m</b>
                 </p>
                 <h3>2.3 平均波周期 T<sub>m</sub></h3>
                 <p style="margin-left:20px;font-family:monospace;">
-                    T<sub>m</sub> = (W/g) × 13.9 × √(g·h<sub>m</sub>/W²) = ${w.Tm.toFixed(3)} s
+                    T<sub>m</sub> = (W/g) × 13.9 × √(g·h<sub>m</sub>/W²) = (${w.W.toFixed(1)}/${g.toFixed(2)}) × 13.9 × √(${g.toFixed(2)}×${w.hm.toFixed(4)}/${w.W.toFixed(1)}²) = <b style="color:#e53e3e;">${w.Tm.toFixed(3)} s</b>
                 </p>
                 <h3>2.4 平均波长 L<sub>m</sub>（迭代求解）</h3>
                 <p style="margin-left:20px;font-family:monospace;">
-                    L<sub>m</sub> = (g·T<sub>m</sub>² / 2π) × tanh(2πH/L<sub>m</sub>) = ${w.Lm.toFixed(3)} m
+                    L<sub>m</sub> = (g·T<sub>m</sub>² / 2π) × tanh(2πH/L<sub>m</sub>) = (${g.toFixed(2)}×${w.Tm.toFixed(3)}²/6.2832) × tanh(2π×${w.H.toFixed(1)}/${w.Lm.toFixed(3)}) = <b style="color:#e53e3e;">${w.Lm.toFixed(3)} m</b>
                 </p>
                 <h3>2.5 设计波高 h<sub>p%</sub></h3>
                 <p>波列累积频率（${calc.level}级水闸）：P = ${w.pVal}%</p>
                 <p style="margin-left:20px;font-family:monospace;">
                     h<sub>m</sub>/H<sub>m</sub> = ${w.hm.toFixed(4)}/${calc.avgDepth.toFixed(1)} = ${w.hmHm.toFixed(4)}<br>
                     查表插值 → h<sub>p%</sub>/h<sub>m</sub> = ${w.ratio.toFixed(3)}<br>
-                    <b style="color:#1a56db;">h<sub>p%</sub> = h<sub>m</sub> × 比值 = ${w.hp.toFixed(4)} m</b>
+                    <b style="color:#e53e3e;">h<sub>p%</sub> = h<sub>m</sub> × 比值 = ${w.hm.toFixed(4)} × ${w.ratio.toFixed(3)} = ${w.hp.toFixed(4)} m</b>
                 </p>
                 <h3>2.6 波浪中心线至静水位高差 h<sub>z</sub></h3>
                 <p style="margin-left:20px;font-family:monospace;">
                     h<sub>z</sub> = (π·h<sub>p%</sub>²/L<sub>m</sub>) × cth(2πH/L<sub>m</sub>)<br>
-                    = (π × ${w.hp.toFixed(4)}² / ${w.Lm.toFixed(3)}) × cth(${w.argCth.toFixed(4)}) = ${w.hz.toFixed(4)} m
+                    = (π × ${w.hp.toFixed(4)}² / ${w.Lm.toFixed(3)}) × cth(${w.argCth.toFixed(4)}) = <b style="color:#e53e3e;">${w.hz.toFixed(4)} m</b>
                 </p>
                 <h3>2.7 波浪计算高度 R</h3>
-                <p style="margin-left:20px;font-family:monospace;color:#1a56db;font-size:13pt;">
+                <p style="margin-left:20px;font-family:monospace;color:#e53e3e;font-size:13pt;">
                     <b>R = h<sub>p%</sub> + h<sub>z</sub> = ${w.hp.toFixed(4)} + ${w.hz.toFixed(4)} = ${w.waveHeight.toFixed(4)} m</b>
                 </p>`;
         } else {
             waveSec = `<h3>2.2 波浪计算高度 R（手动输入）</h3>
-                <p style="margin-left:20px;font-family:monospace;color:#1a56db;"><b>R = ${w.waveHeight.toFixed(3)} m</b></p>`;
+                <p style="margin-left:20px;font-family:monospace;color:#e53e3e;"><b>R = ${w.waveHeight.toFixed(3)} m</b></p>`;
         }
 
         const wH = w.isAuto ? w.waveHeight.toFixed(4) : w.waveHeight.toFixed(3);
@@ -1342,18 +1416,17 @@ ${waveSec}
 <h2>四、各工况闸顶高程计算</h2>
 <p><b>挡水时：</b>∇<sub>闸顶</sub> = 水位 + R + A&emsp;&emsp;<b>泄水时：</b>∇<sub>闸顶</sub> = 水位 + A</p>
 <table>
-<tr><th>序号</th><th>计算工况</th><th>计算公式</th><th>结果(m)</th><th>控制</th></tr>
-<tr><td>1</td><td>挡水-正常蓄水位</td><td style="font-size:9pt;">${calc.normalWL.toFixed(2)} + ${wH} + ${calc.A_retain_normal.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[0].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[0].name)?'⭐':''}</td></tr>
-<tr><td>2</td><td>挡水-最高挡水位</td><td style="font-size:9pt;">${calc.retainWL.toFixed(2)} + ${wH} + ${calc.A_retain_max.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[1].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[1].name)?'⭐':''}</td></tr>
-<tr><td>3</td><td>泄水-设计洪水位</td><td style="font-size:9pt;">${calc.designFL.toFixed(2)} + ${calc.A_discharge_design.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[2].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[2].name)?'⭐':''}</td></tr>
-<tr><td>4</td><td>泄水-校核洪水位</td><td style="font-size:9pt;">${calc.checkFL.toFixed(2)} + ${calc.A_discharge_check.toFixed(1)}</td><td style="color:#1a56db;font-weight:bold;">${calc.candidates[3].value.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name===calc.candidates[3].name)?'⭐':''}</td></tr>
-${calc.leveeElev !== null ? `<tr><td>5</td><td>防洪(挡潮)堤顶高程</td><td style="font-size:9pt;">∇_堤顶 = ${calc.leveeElev.toFixed(2)}</td><td>${calc.leveeElev.toFixed(2)}</td><td>${calc.controlling.some(c=>c.name==='防洪堤顶高程')?'⭐':''}</td></tr>` : ''}
+<tr><th>序号</th><th>计算工况</th><th>计算公式</th><th>结果(m)</th></tr>
+<tr><td>1</td><td>挡水-正常蓄水位</td><td style="font-size:9pt;">${calc.normalWL.toFixed(2)} + ${wH} + ${calc.A_retain_normal.toFixed(1)}</td><td style="color:#e53e3e;font-weight:bold;">${calc.candidates[0].value.toFixed(2)}</td></tr>
+<tr><td>2</td><td>挡水-最高挡水位</td><td style="font-size:9pt;">${calc.retainWL.toFixed(2)} + ${wH} + ${calc.A_retain_max.toFixed(1)}</td><td style="color:#e53e3e;font-weight:bold;">${calc.candidates[1].value.toFixed(2)}</td></tr>
+<tr><td>3</td><td>泄水-设计洪水位</td><td style="font-size:9pt;">${calc.designFL.toFixed(2)} + ${calc.A_discharge_design.toFixed(1)}</td><td style="color:#e53e3e;font-weight:bold;">${calc.candidates[2].value.toFixed(2)}</td></tr>
+<tr><td>4</td><td>泄水-校核洪水位</td><td style="font-size:9pt;">${calc.checkFL.toFixed(2)} + ${calc.A_discharge_check.toFixed(1)}</td><td style="color:#e53e3e;font-weight:bold;">${calc.candidates[3].value.toFixed(2)}</td></tr>
+${calc.leveeElev !== null ? `<tr><td>5</td><td>防洪(挡潮)堤顶高程</td><td style="font-size:9pt;">∇_堤顶 = ${calc.leveeElev.toFixed(2)}</td><td style="color:#e53e3e;font-weight:bold;">${calc.leveeElev.toFixed(2)}</td></tr>` : ''}
 </table>
 ${calc.bridgeAdjusted ? `<div class="imp"><p><b>⚠ 交通桥底高程调整：</b>桥底高程不满足高出最高洪水位 ≥ 0.5m 要求，闸顶高程已自动抬升至 <b>${calc.maxElev.toFixed(2)} m</b>。</p></div>` : ''}
 
 <h2>五、最终推荐闸顶高程</h2>
-<div class="imp"><p style="font-size:14pt;font-weight:bold;color:#1a56db;text-align:center;">∇<sub>闸顶</sub> = ${calc.maxElev.toFixed(2)} m</p>
-<p style="text-align:center;">控制工况：${calc.controlling.map(c=>c.name).join('、')}</p></div>
+<div class="imp"><p style="font-size:14pt;font-weight:bold;color:#e53e3e;text-align:center;">∇<sub>闸顶</sub> = ${calc.maxElev.toFixed(2)} m</p></div>
 
 <h2>六、交通桥底高程</h2>
 <p style="font-size:11pt;"><b>∇<sub>桥底</sub> = ∇<sub>闸顶</sub> − 桥厚 = ${calc.maxElev.toFixed(2)} − ${calc.bridgeThick.toFixed(2)} = ${calc.bridgeBottomElev.toFixed(2)} m</b></p>
